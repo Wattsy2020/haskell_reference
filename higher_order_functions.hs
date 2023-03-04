@@ -1,3 +1,4 @@
+import Text.XHtml (base)
 all' :: [Bool] -> Bool
 all' [] = True -- vaccuous truth
 all' [x] = x
@@ -47,6 +48,11 @@ collatzLength = length . collatzChain
 numLongCollatz = length (filter (>15) (map collatzLength [1..100]))
 --main = print numLongCollatz
 
+-- compute the moving average of a list
+expMean :: Fractional a => [a] -> [a]
+expMean = scanl1 (\acc x -> 0.9*acc + 0.1*x)
+-- main = print (expMean (map (fromIntegral . collatzLength) [1..100]))
+
 -- Implement with folding
 all2 :: [Bool] -> Bool
 all2 = foldl (&&) True -- can also just use the and func
@@ -67,4 +73,13 @@ map' f = foldr (\x acc -> f x : acc) []
 -- how many square roots of the natural numbers does it take to get for their sum to be over 1000
 cumulativeSumSqrts = scanl1 (+) (map sqrt [1..])
 answer = length (takeWhile (<1000) cumulativeSumSqrts)
-main = print answer
+-- main = print answer
+
+-- how foldl is defined
+foldl' :: (b -> a -> b) -> b -> [a] -> b
+foldl' _ acc [] = acc
+foldl' accFunc acc (x:xs) = foldl' accFunc (accFunc acc x) xs
+
+elem3 :: Eq a => a -> [a] -> Bool
+elem3 item = foldl' (\acc x -> acc || (item == x)) False
+main = print (elem3 1 [3, 1, 2], elem3 "Hello" ["There", "Kenobi", "Hello"], elem3 'H' "Hello", elem3 42 [1, 2, 3], elem3 1 [])
