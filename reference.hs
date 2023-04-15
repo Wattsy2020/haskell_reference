@@ -31,11 +31,12 @@ maximum' (x : xs) = max x (maximum' xs)
 -- >(4,'o',(1,"hezzo"))
 
 sum' :: (Num a) => [a] -> a
+sum' [] = 0
 sum' [x] = x
 sum' (x : xs) = x + sum' xs
 
--- main = print (sum' nums, sum' [1.2, 3.4, 5.6])
--- >(10,10.2)
+-- main = print (sum' nums, sum' [1.2, 3.4, 5.6], sum' [])
+-- >(10, 10.2, 0)
 
 -- composing functions
 addOne :: (Integral a) => [a] -> [a]
