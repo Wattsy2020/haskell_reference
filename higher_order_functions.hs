@@ -1,3 +1,5 @@
+import Data.Foldable (minimumBy)
+import Data.Function (on)
 import Text.XHtml (base)
 
 all' :: [Bool] -> Bool
@@ -103,3 +105,19 @@ elem3 :: Eq a => a -> [a] -> Bool
 elem3 item = foldl' (\acc x -> acc || (item == x)) False
 
 -- main = print (elem3 1 [3, 1, 2], elem3 "Hello" ["There", "Kenobi", "Hello"], elem3 'H' "Hello", elem3 42 [1, 2, 3], elem3 1 [])
+
+distance :: Integral a => a -> a -> a
+distance a b = abs (a - b)
+
+-- a = (compare `on` distance 1) 0 2 -- the `on` function means: call (distance 1) on the two elements first, then apply compare to the two resulting values
+on' :: (b -> b -> c) -> (a -> b) -> a -> a -> c
+on' pairFunc elemFunc input1 input2 = pairFunc (elemFunc input1) (elemFunc input2)
+
+-- main = print (on' (+) abs (-1) (-2)) -- abs(-1) + abs(-2) = 3
+
+closestElem :: Int -> [Int] -> Int
+closestElem target = minimumBy (compare `on'` distance target)
+
+main = print (closestElem 10 [1, 2, 3, 8, 11, 15])
+
+-- main == print ((compare `on` distance 1) [1, 2])
