@@ -1,5 +1,6 @@
 import Data.Foldable (minimumBy)
 import Data.Function (on)
+import Distribution.Simple.Setup (ConfigFlags (configAllowDependingOnPrivateLibs))
 import Text.XHtml (base)
 
 all' :: [Bool] -> Bool
@@ -50,13 +51,32 @@ squareSum = sum (filter odd (takeWhile (< 10000) [x ^ 2 | x <- [1 ..]]))
 
 -- main = print squareSum
 
-collatzChain :: Int -> [Int]
-collatzChain x
-  | x == 1 = [1]
-  | odd x = x : collatzChain (3 * x + 1)
-  | even x = x : collatzChain (x `div` 2)
+nextCollatz :: Integral a => a -> a
+nextCollatz x
+  | odd x = 3 * x + 1
+  | otherwise = x `div` 2
 
-collatzLength = length . collatzChain
+-- create collatzChain using a generic function that recursively calls a function to construct a list
+-- function takes f, an initial value, then recursively calls f to create the list
+recurseList :: (a -> a) -> a -> [a]
+recurseList f x = x : recurseList f (f x)
+
+collatzChain :: Integral a => a -> [a]
+collatzChain = recurseList nextCollatz
+
+-- main = print (take 10 (collatzChain 9))
+
+-- take while the function is True, including the first false element
+takeWhile1 :: (a -> Bool) -> [a] -> [a]
+takeWhile1 _ [] = []
+takeWhile1 f (x : xs)
+  | f x = x : takeWhile1 f xs
+  | otherwise = [x]
+
+-- main = print (takeWhile1 (1 /=) (collatzChain 5))
+
+collatzLength :: Int -> Int
+collatzLength x = length (takeWhile (1 /=) (collatzChain x))
 
 numLongCollatz = length (filter (> 15) (map collatzLength [1 .. 100]))
 
@@ -88,6 +108,21 @@ map' f = foldr (\x acc -> f x : acc) []
 
 -- main = print (map' (+1) [1, 2, 3, 4])
 
+-- scan function, applies a cumulative function to each element in the list, outputing the results as a list
+-- where list !! i is the ith cumulative result
+scanl' :: (b -> a -> b) -> b -> [a] -> [b]
+scanl' _ _ [] = []
+scanl' f acc (x : xs) = new_acc : scanl' f new_acc xs
+  where
+    new_acc = f acc x
+
+-- scanl1 just uses the first element in the list as the starting accumlulator arg
+scanl1' :: (a -> a -> a) -> [a] -> [a]
+scanl1' f (x : xs) = scanl' f x xs
+
+-- can use the $ to lower the priority and evaluate the right arguments first
+main = print $ scanl1' (+) [1 .. 10]
+
 -- how many square roots of the natural numbers does it take to get for their sum to be over 1000
 cumulativeSumSqrts = scanl1 (+) (map sqrt [1 ..])
 
@@ -118,6 +153,6 @@ on' pairFunc elemFunc input1 input2 = pairFunc (elemFunc input1) (elemFunc input
 closestElem :: Int -> [Int] -> Int
 closestElem target = minimumBy (compare `on'` distance target)
 
-main = print (closestElem 10 [1, 2, 3, 8, 11, 15])
+-- main = print (closestElem 10 [1, 2, 3, 8, 11, 15])
 
 -- main == print ((compare `on` distance 1) [1, 2])
