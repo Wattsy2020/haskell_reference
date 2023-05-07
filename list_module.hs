@@ -122,4 +122,11 @@ primes = iterateContext nextPrime (\acc x -> acc ++ [x]) []
 takeRange :: Int -> Int -> [Int] -> [Int]
 takeRange low high = takeWhile' (< high) . dropWhile' (< low)
 
-main = print (length $ takeRange 0 100 primes, length $ takeRange 100 1000 primes, length $ takeRange 900 1000 primes)
+-- main = print (length $ takeRange 0 100 primes, length $ takeRange 100 1000 primes, length $ takeRange 900 1000 primes)
+
+-- iterateContext can be used to define the fibonacci sequence in a "backwards recursive" manner, no need for memoization!
+-- in reality this is just like an infinite generator in python
+fib :: [Integer]
+fib = iterateContext (\(n2, n1) -> n2 + n1) (\(_, n1) n -> (n1, n)) (1, 1)
+
+main = print $ sum $ take 10000 fib
