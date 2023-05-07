@@ -58,4 +58,71 @@ all' f = or' . map f
 any' :: (a -> Bool) -> [a] -> Bool
 any' f = and' . map f
 
-main = print (any' (== 4) [2, 3, 5, 6, 1, 4], all (> 4) [6, 9, 10], all (`elem` ['A' .. 'Z']) "Yo", any (`elem` ['A' .. 'Z']) "Yo")
+-- main = print (any' (== 4) [2, 3, 5, 6, 1, 4], all (> 4) [6, 9, 10], all (`elem` ['A' .. 'Z']) "Yo", any (`elem` ['A' .. 'Z']) "Yo")
+
+splitAt' :: Int -> [a] -> ([a], [a])
+splitAt' idx xs = (take idx xs, drop idx xs)
+
+-- main = print $ splitAt' 5 "hello there"
+
+takeWhile' :: (a -> Bool) -> [a] -> [a]
+takeWhile' _ [] = []
+takeWhile' predicate (x : xs)
+  | predicate x = x : takeWhile' predicate xs
+  | otherwise = []
+
+-- note we cannot use foldl, since takeWhile has early stopping, using foldl (actually foldr) gives us filter
+filter' :: (a -> Bool) -> [a] -> [a]
+filter' predicate = foldr (\x acc -> if predicate x then x : acc else acc) []
+
+-- main = do
+--  print (takeWhile' (> 3) [6, 5, 4, 3, 2, 1, 2, 3, 4], takeWhile' (/= ' ') "This is a sentence")
+--  print (filter' (> 3) [6, 5, 4, 3, 2, 1, 2, 3, 4], filter' (/= ' ') "This is a sentence")
+
+-- main = print $ sum $ takeWhile' (< 10000) (map (^ 3) [1 ..])
+
+dropWhile' :: (a -> Bool) -> [a] -> [a]
+dropWhile' _ [] = []
+dropWhile' predicate (x : xs)
+  | predicate x = dropWhile' predicate xs
+  | otherwise = x : xs
+
+-- main = print (dropWhile (/= ' ') "This is a sentence", dropWhile (< 3) [1, 2, 2, 2, 3, 4, 5, 4, 3, 2, 1])
+
+showStock :: (Float, Int, Int, Int) -> String
+showStock (price, year, month, day) = "price=" ++ show price ++ " date=" ++ show year ++ "/" ++ show month ++ "/" ++ show day
+
+-- main = do
+--  let stock = [(994.4, 2008, 9, 1), (995.2, 2008, 9, 2), (999.2, 2008, 9, 3), (1001.4, 2008, 9, 4), (998.3, 2008, 9, 5)]
+--  print $ map showStock (dropWhile' (\(price, _, _, _) -> price < 1000) stock)
+
+-- build prime sieve of erasmus and calculate number of primes between 100 and 1000, compare to 0 and 100
+-- given a list of primes less than a number, and the number, calculate whether it is a prime
+isPrime :: [Int] -> Int -> Bool
+isPrime primes x = not $ any (\num -> mod x num == 0) filteredPrimes
+  where
+    -- primes > 1 and less than sqrt x
+    filteredPrimes = takeWhile' (<= (floor $ sqrt $ fromIntegral x)) (tail primes)
+
+nextPrime :: [Int] -> Int
+nextPrime [] = 1
+nextPrime primes = head $ filter (isPrime primes) [last primes + 1 ..]
+
+primeList :: [Int]
+primeList = [1]
+
+-- main = print (map (isPrime [1, 2, 3, 5, 7]) [8, 9, 10, 11], nextPrime [1, 2, 3, 5, 7])
+
+-- like iterate, but allows for passing context as a list between the functions
+iterateContext :: ([a] -> a) -> [a] -> [a]
+iterateContext f context = next : iterateContext f (context ++ [next])
+  where
+    next = f context
+
+primes :: [Int]
+primes = iterateContext nextPrime []
+
+takeRange :: Int -> Int -> [Int] -> [Int]
+takeRange low high = takeWhile' (< high) . dropWhile' (< low)
+
+main = print (length $ takeRange 0 100 primes, length $ takeRange 100 1000 primes, length $ takeRange 900 1000 primes)

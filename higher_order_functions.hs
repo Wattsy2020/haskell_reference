@@ -57,7 +57,7 @@ nextCollatz x
   | odd x = 3 * x + 1
   | otherwise = x `div` 2
 
--- create collatzChain using a generic function that recursively calls a function to construct a list
+-- create collatzChain using a generic function that recursively calls a function to construct a list (same as iterate)
 -- function takes f, an initial value, then recursively calls f to create the list
 recurseList :: (a -> a) -> a -> [a]
 recurseList f x = x : recurseList f (f x)
