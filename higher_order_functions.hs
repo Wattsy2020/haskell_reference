@@ -1,3 +1,4 @@
+import Data.Binary.Get (remaining)
 import Data.Foldable (minimumBy)
 import Data.Function (on)
 import Distribution.Simple.Setup (ConfigFlags (configAllowDependingOnPrivateLibs))
@@ -121,7 +122,7 @@ scanl1' :: (a -> a -> a) -> [a] -> [a]
 scanl1' f (x : xs) = scanl' f x xs
 
 -- can use the $ to lower the priority and evaluate the right arguments first
-main = print $ scanl1' (+) [1 .. 10]
+-- main = print $ scanl1' (+) [1 .. 10]
 
 -- how many square roots of the natural numbers does it take to get for their sum to be over 1000
 cumulativeSumSqrts = scanl1 (+) (map sqrt [1 ..])
@@ -141,6 +142,15 @@ elem3 item = foldl' (\acc x -> acc || (item == x)) False
 
 -- main = print (elem3 1 [3, 1, 2], elem3 "Hello" ["There", "Kenobi", "Hello"], elem3 'H' "Hello", elem3 42 [1, 2, 3], elem3 1 [])
 
+-- foldl1 uses the first element in the list to start the accumulation
+foldl1' :: (a -> a -> a) -> [a] -> a
+foldl1' accFunc (x : xs) = foldl' accFunc x xs
+
+product' :: Num a => [a] -> a
+product' = foldl1' (*)
+
+main = print (product' [1, 2, 3], product' [-1, 9, 2], product' [9, -100, 0])
+
 distance :: Integral a => a -> a -> a
 distance a b = abs (a - b)
 
@@ -155,4 +165,4 @@ closestElem target = minimumBy (compare `on'` distance target)
 
 -- main = print (closestElem 10 [1, 2, 3, 8, 11, 15])
 
--- main == print ((compare `on` distance 1) [1, 2])
+-- main = print ((compare `on` distance 1) [1, 2])
