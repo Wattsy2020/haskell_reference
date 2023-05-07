@@ -108,19 +108,16 @@ nextPrime :: [Int] -> Int
 nextPrime [] = 1
 nextPrime primes = head $ filter (isPrime primes) [last primes + 1 ..]
 
-primeList :: [Int]
-primeList = [1]
-
 -- main = print (map (isPrime [1, 2, 3, 5, 7]) [8, 9, 10, 11], nextPrime [1, 2, 3, 5, 7])
 
 -- like iterate, but allows for passing context as a list between the functions
-iterateContext :: ([a] -> a) -> [a] -> [a]
-iterateContext f context = next : iterateContext f (context ++ [next])
+iterateContext :: (b -> a) -> (b -> a -> b) -> b -> [a]
+iterateContext f accFunc context = next : iterateContext f accFunc (accFunc context next)
   where
     next = f context
 
 primes :: [Int]
-primes = iterateContext nextPrime []
+primes = iterateContext nextPrime (\acc x -> acc ++ [x]) []
 
 takeRange :: Int -> Int -> [Int] -> [Int]
 takeRange low high = takeWhile' (< high) . dropWhile' (< low)
