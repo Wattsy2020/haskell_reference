@@ -1,4 +1,6 @@
 -- import Data.List
+import Data.Function (on)
+
 -- reimplementations of functions in Data.List
 
 -- add x to the list if it is not already contained in it
@@ -127,6 +129,13 @@ takeRange low high = takeWhile' (< high) . dropWhile' (< low)
 -- iterateContext can be used to define the fibonacci sequence in a "backwards recursive" manner, no need for memoization!
 -- in reality this is just like an infinite generator in python
 fib :: [Integer]
-fib = iterateContext (\(n2, n1) -> n2 + n1) (\(_, n1) n -> (n1, n)) (1, 1)
+fib = iterateContext (\(n2, n1) -> n2 + n1) (\(_, n1) n -> (n1, n)) (0, 1)
 
-main = print $ sum $ take 10000 fib
+-- main = print $ sum $ take 10000 fib
+phi :: Double
+phi = (1 / 2) * (1 + sqrt 5)
+
+-- can see that fib n / fib n-1 approaches phi
+main = do
+  let fibRatio = zipWith ((/) `on` fromInteger) (tail fib) fib
+  print $ take 20 $ map (/ phi) fibRatio
