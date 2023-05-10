@@ -1,6 +1,5 @@
 -- import Data.List
 import Data.Function (on)
-import Distribution.Simple.Utils (xargs)
 
 -- reimplementations of functions in Data.List
 

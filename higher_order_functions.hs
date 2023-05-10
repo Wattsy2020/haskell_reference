@@ -1,8 +1,5 @@
-import Data.Binary.Get (remaining)
 import Data.Foldable (minimumBy)
 import Data.Function (on)
-import Distribution.Simple.Setup (ConfigFlags (configAllowDependingOnPrivateLibs))
-import Text.XHtml (base)
 
 all' :: [Bool] -> Bool
 all' [] = True -- vaccuous truth
