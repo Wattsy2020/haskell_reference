@@ -149,7 +149,7 @@ foldl1' accFunc (x : xs) = foldl' accFunc x xs
 product' :: Num a => [a] -> a
 product' = foldl1' (*)
 
-main = print (product' [1, 2, 3], product' [-1, 9, 2], product' [9, -100, 0])
+-- main = print (product' [1, 2, 3], product' [-1, 9, 2], product' [9, -100, 0])
 
 distance :: Integral a => a -> a -> a
 distance a b = abs (a - b)
@@ -166,3 +166,17 @@ closestElem target = minimumBy (compare `on'` distance target)
 -- main = print (closestElem 10 [1, 2, 3, 8, 11, 15])
 
 -- main = print ((compare `on` distance 1) [1, 2])
+
+foldr' :: (a -> b -> b) -> b -> [a] -> b
+foldr' _ acc [] = acc
+foldr' accFunc acc (x : xs) = accFunc x (foldr accFunc acc xs)
+
+scanr' :: (a -> b -> b) -> b -> [a] -> [b]
+scanr' _ acc [] = [acc]
+scanr' accFunc acc (x : xs) = accFunc x right_acc : right_accs
+  where
+    right_accs@(right_acc : _) = scanr' accFunc acc xs
+
+testList = [1, 2, 3, 4]
+
+main = print (foldr' (+) 0 testList, scanr' (+) 0 testList)
