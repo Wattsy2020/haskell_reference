@@ -1,5 +1,6 @@
 -- import Data.List
 import Data.Function (on)
+import Distribution.Simple.Utils (xargs)
 
 -- reimplementations of functions in Data.List
 
@@ -85,9 +86,9 @@ filter' predicate = foldr (\x acc -> if predicate x then x : acc else acc) []
 
 dropWhile' :: (a -> Bool) -> [a] -> [a]
 dropWhile' _ [] = []
-dropWhile' predicate (x : xs)
-  | predicate x = dropWhile' predicate xs
-  | otherwise = x : xs
+dropWhile' predicate xs@(x : xs')
+  | predicate x = dropWhile' predicate xs'
+  | otherwise = xs
 
 -- main = print (dropWhile (/= ' ') "This is a sentence", dropWhile (< 3) [1, 2, 2, 2, 3, 4, 5, 4, 3, 2, 1])
 
@@ -136,6 +137,77 @@ phi :: Double
 phi = (1 / 2) * (1 + sqrt 5)
 
 -- can see that fib n / fib n-1 approaches phi
-main = do
-  let fibRatio = zipWith ((/) `on` fromInteger) (tail fib) fib
-  print $ take 20 $ map (/ phi) fibRatio
+-- main = do
+--  let fibRatio = zipWith ((/) `on` fromInteger) (tail fib) fib
+--  print $ take 20 $ map (/ phi) fibRatio
+
+span' :: (a -> Bool) -> [a] -> ([a], [a])
+span' _ [] = ([], [])
+span' predicate xs@(x : xs')
+  | predicate x =
+      let result = span' predicate xs'
+       in (x : fst result, snd result)
+  | otherwise = ([], xs)
+
+break' :: (a -> Bool) -> [a] -> ([a], [a])
+break' predicate = span' (not . predicate)
+
+-- main = print (span' (< 5) [1, 2, 3, 4, 5, 6, 7, 3, 9], break (== 5) [1, 2, 3, 4, 5, 6, 7, 3, 9])
+
+-- add newElem to the current list if it is the same elem, otherwise create a new list
+accAdjacent :: Eq a => a -> [[a]] -> [[a]]
+accAdjacent newElem [[]] = [[newElem]]
+accAdjacent newElem accLists@(accList : accLists')
+  | newElem == head accList = (newElem : accList) : accLists'
+  | otherwise = [newElem] : accLists
+
+group' :: Eq a => [a] -> [[a]]
+group' = foldr accAdjacent [[]]
+
+-- main = print $ group' [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 2, 2, 2, 5, 6, 7]
+
+head' :: [a] -> a
+head' (x : _) = x
+
+last' :: [a] -> a
+last' [x] = x
+last' (_ : xs) = last' xs
+
+init' :: [a] -> [a]
+init' [_] = []
+init' (x : xs) = x : init' xs
+
+tail' :: [a] -> [a]
+tail' (_ : xs) = xs
+
+testList :: [Int]
+testList = [1, 2, 3, 4]
+
+{-
+main =
+  print $
+    "head: "
+      ++ show (head' testList)
+      ++ " last: "
+      ++ show (last' testList)
+      ++ " init: "
+      ++ show (init' testList)
+      ++ " tail: "
+      ++ show (tail' testList)
+-}
+
+-- this tails is wrong as well
+tails' :: [a] -> [[a]]
+tails' [] = [[]]
+tails' xs = xs : tails' (tail xs)
+
+-- this might seem like a hack, but we need to use scanr on a dummy list of the same length, just so we know:
+-- "after going through the whole list, return the list and then start shrinking that list with init"
+inits' :: [a] -> [[a]]
+inits' xs = scanr (\_ acc -> init acc) xs xs
+
+-- alternate implementation has expensive list concatenation
+-- inits' [] = [[]]
+-- inits' xs = inits' (init xs) ++ [xs]
+
+main = print (tails' [1, 2, 3, 4], inits' [1, 2, 3, 4])
