@@ -144,8 +144,8 @@ span' :: (a -> Bool) -> [a] -> ([a], [a])
 span' _ [] = ([], [])
 span' predicate xs@(x : xs')
   | predicate x =
-      let result = span' predicate xs'
-       in (x : fst result, snd result)
+      let (included, remaining) = span' predicate xs'
+       in (x : included, remaining)
   | otherwise = ([], xs)
 
 break' :: (a -> Bool) -> [a] -> ([a], [a])
@@ -198,12 +198,12 @@ main =
 -- this tails is wrong as well
 tails' :: [a] -> [[a]]
 tails' [] = [[]]
-tails' xs = xs : tails' (tail xs)
+tails' xs = xs : tails' (tail' xs)
 
 -- this might seem like a hack, but we need to use scanr on a dummy list of the same length, just so we know:
 -- "after going through the whole list, return the list and then start shrinking that list with init"
 inits' :: [a] -> [[a]]
-inits' xs = scanr (\_ acc -> init acc) xs xs
+inits' xs = scanr (\_ acc -> init' acc) xs xs
 
 -- alternate implementation has expensive list concatenation
 -- inits' [] = [[]]
