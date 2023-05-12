@@ -151,7 +151,17 @@ span' predicate xs@(x : xs')
 break' :: (a -> Bool) -> [a] -> ([a], [a])
 break' predicate = span' (not . predicate)
 
--- main = print (span' (< 5) [1, 2, 3, 4, 5, 6, 7, 3, 9], break (== 5) [1, 2, 3, 4, 5, 6, 7, 3, 9])
+addToPartition :: (a -> Bool) -> a -> ([a], [a]) -> ([a], [a])
+addToPartition predicate x (matching, other)
+  | predicate x = (x : matching, other)
+  | otherwise = (matching, x : other)
+
+partition' :: (a -> Bool) -> [a] -> ([a], [a])
+partition' predicate = foldr (addToPartition predicate) ([], [])
+
+testList2 = [1, 2, 3, 4, 5, 6, 7, 3, 9]
+
+main = print (span' (< 5) testList2, break (== 5) testList2, partition' (< 5) testList2)
 
 -- add newElem to the current list if it is the same elem, otherwise create a new list
 accAdjacent :: Eq a => a -> [[a]] -> [[a]]
@@ -195,7 +205,11 @@ main =
       ++ show (tail' testList)
 -}
 
--- this tails is wrong as well
+reverse' :: [a] -> [a]
+reverse' = foldl (flip (:)) []
+
+-- main = print (reverse' [1, 2, 3, 4, 5], reverse' "hello there!")
+
 tails' :: [a] -> [[a]]
 tails' [] = [[]]
 tails' xs = xs : tails' (tail' xs)
@@ -209,4 +223,12 @@ inits' xs = scanr (\_ acc -> init' acc) xs xs
 -- inits' [] = [[]]
 -- inits' xs = inits' (init xs) ++ [xs]
 
-main = print (tails' [1, 2, 3, 4], inits' [1, 2, 3, 4])
+-- main = print (tails' [1, 2, 3, 4], inits' [1, 2, 3, 4])
+
+isPrefixOf' :: Eq a => [a] -> [a] -> Bool
+isPrefixOf' prefix xs = prefix == take (length prefix) xs
+
+isSuffixOf' :: Eq a => [a] -> [a] -> Bool
+isSuffixOf' suffix = isPrefixOf' (reverse' suffix) . reverse'
+
+-- main = print (isPrefixOf' "hello" "hello there!", isPrefixOf' "hello" "hey", isSuffixOf' "there" "hello there")
