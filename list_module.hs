@@ -161,7 +161,7 @@ partition' predicate = foldr (addToPartition predicate) ([], [])
 
 testList2 = [1, 2, 3, 4, 5, 6, 7, 3, 9]
 
-main = print (span' (< 5) testList2, break (== 5) testList2, partition' (< 5) testList2)
+-- main = print (span' (< 5) testList2, break (== 5) testList2, partition' (< 5) testList2)
 
 -- add newElem to the current list if it is the same elem, otherwise create a new list
 accAdjacent :: Eq a => a -> [[a]] -> [[a]]
@@ -232,3 +232,24 @@ isSuffixOf' :: Eq a => [a] -> [a] -> Bool
 isSuffixOf' suffix = isPrefixOf' (reverse' suffix) . reverse'
 
 -- main = print (isPrefixOf' "hello" "hello there!", isPrefixOf' "hello" "hey", isSuffixOf' "there" "hello there")
+
+find' :: (a -> Bool) -> [a] -> Maybe a
+find' _ [] = Nothing
+find' predicate (x : xs)
+  | predicate x = Just x
+  | otherwise = find' predicate xs
+
+testList3 = [1, 2, 3, 4, 5, 6]
+
+-- main = print (find' (> 4) testList3, find' (> 9) testList3)
+
+elemIndexCount :: Eq a => Int -> a -> [a] -> Maybe Int
+elemIndexCount _ _ [] = Nothing
+elemIndexCount idx item (x : xs)
+  | item == x = Just idx
+  | otherwise = elemIndexCount (idx + 1) item xs
+
+elemIndex' :: Eq a => a -> [a] -> Maybe Int
+elemIndex' = elemIndexCount 0
+
+main = print (elemIndex' 4 testList3, elemIndex' 1 testList3, elemIndex' 10 testList3)
