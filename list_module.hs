@@ -1,4 +1,6 @@
 -- import Data.List
+
+import Data.Char (isSpace)
 import Data.Function (on)
 
 -- reimplementations of functions in Data.List
@@ -239,9 +241,17 @@ find' predicate (x : xs)
   | predicate x = Just x
   | otherwise = find' predicate xs
 
+findIndexCount :: Int -> (a -> Bool) -> [a] -> Maybe Int
+findIndexCount _ _ [] = Nothing
+findIndexCount idx predicate (x : xs)
+  | predicate x = Just idx
+  | otherwise = findIndexCount (idx + 1) predicate xs
+
+findIndex' = findIndexCount 0
+
 testList3 = [1, 2, 3, 4, 5, 6]
 
--- main = print (find' (> 4) testList3, find' (> 9) testList3)
+-- main = print (find' (> 4) testList3, find' (> 9) testList3, findIndex' (> 4) testList3)
 
 elemIndexCount :: Eq a => Int -> a -> [a] -> Maybe Int
 elemIndexCount _ _ [] = Nothing
@@ -252,4 +262,83 @@ elemIndexCount idx item (x : xs)
 elemIndex' :: Eq a => a -> [a] -> Maybe Int
 elemIndex' = elemIndexCount 0
 
-main = print (elemIndex' 4 testList3, elemIndex' 1 testList3, elemIndex' 10 testList3)
+-- main = print (elemIndex' 4 testList3, elemIndex' 1 testList3, elemIndex' 10 testList3)
+
+elemIndicesCount :: Eq a => Int -> a -> [a] -> [Int]
+elemIndicesCount _ _ [] = []
+elemIndicesCount idx item (x : xs)
+  | item == x = idx : remaining
+  | otherwise = remaining
+  where
+    remaining = elemIndicesCount (idx + 1) item xs
+
+elemIndices' :: Eq a => a -> [a] -> [Int]
+elemIndices' = elemIndicesCount 0
+
+-- main = print $ ' ' `elemIndices'` "Where are the spaces?"
+
+-- function to split the string by a given character
+splitStrAcc :: Char -> Char -> [String] -> [String]
+splitStrAcc splitChar c currLines@(line : remaining)
+  | splitChar == c = "" : currLines
+  | otherwise = (c : line) : remaining
+
+splitStr :: Char -> String -> [String]
+splitStr splitChar = foldr (splitStrAcc splitChar) [""]
+
+lines' :: String -> [String]
+lines' = splitStr '\n'
+
+-- main = print (lines "first line\nsecond line\nthird line", splitStr ' ' "Hello there!")
+
+unlines' :: [String] -> String
+unlines' = intercalate' "\n"
+
+-- main = print $ unlines ["first line", "second line", "third line"]
+
+-- words removes all whitespace from a string
+accWords :: Char -> [String] -> [String]
+accWords c words'@(first : remaining)
+  | isSpace c =
+      case first of
+        "" -> words' -- don't add another string if we encounter multiple whitespace chars
+        _ -> "" : words'
+  | otherwise = (c : first) : remaining
+
+words' :: String -> [String]
+words' = foldr accWords [""]
+
+-- main = print (words "hello there", words "hey these           are    the words in this\nsentence")
+
+delete' :: Eq a => a -> [a] -> [a]
+delete' _ [] = []
+delete' item (x : xs)
+  | x == item = xs
+  | otherwise = x : delete' item xs
+
+-- main = print (delete' 5 [1, 2, 5, 3], delete' 5 [1, 2, 6])
+
+-- remove elements in list1 that are present in list2
+difference :: Eq a => [a] -> [a] -> [a]
+difference = foldl (flip delete')
+
+union' :: Eq a => [a] -> [a] -> [a]
+union' list1 list2 = list1 ++ difference list2 list1
+
+addIfElem :: Eq a => [a] -> a -> [a] -> [a]
+addIfElem checkList x currList
+  | x `elem` checkList = x : currList
+  | otherwise = currList
+
+intersect' :: Eq a => [a] -> [a] -> [a]
+intersect' list1 list2 = foldr (addIfElem list2) [] list1
+
+-- main = print (difference [1 .. 7] [5 .. 10], union' [1 .. 7] [5 .. 10], intersect' [1 .. 7] [5 .. 10])
+
+-- insert element into a list, preserving the list if it is sorted
+insert' :: Ord a => a -> [a] -> [a]
+insert' item xs = first ++ [item] ++ remaining
+  where
+    (first, remaining) = span' (<= item) xs
+
+-- main = print (insert' 4 [1, 2, 3, 5, 6, 7], insert' 'g' $ ['a' .. 'f'] ++ ['h' .. 'z'])
