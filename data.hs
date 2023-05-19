@@ -1,3 +1,5 @@
+import Data.Function (on)
+
 data PeaNum = Succ PeaNum | Zero deriving (Show)
 
 makePeaNum :: Int -> PeaNum
@@ -6,26 +8,49 @@ makePeaNum x = Succ $ makePeaNum $ x - 1
 
 -- main = print (Zero, Succ Zero, makePeaNum 5)
 
-data Complex a = Complex a a deriving (Show)
+data Complex a = Complex a a deriving (Show, Eq)
 
 fromReal :: Num a => a -> Complex a
 fromReal x = Complex x 0
 
-add :: Num a => Complex a -> Complex a -> Complex a
-add (Complex x1 y1) (Complex x2 y2) = Complex (x1 + x2) (y1 + y2)
+modulus :: Floating a => Complex a -> a
+modulus (Complex x y) = sqrt (x ^ 2 + y ^ 2)
 
-multiply :: Num a => Complex a -> Complex a -> Complex a
-multiply (Complex x1 y1) (Complex x2 y2) = Complex (x1 * x2 - y1 * y2) (x1 * y2 + x2 * y1)
+norm :: Floating a => Complex a -> Complex a
+norm c@(Complex x y) = let r = modulus c in Complex (x / r) (y / r)
 
-pow :: Num a => Complex a -> Int -> Complex a
-pow c1 times = foldl (\acc x -> multiply c1 acc) c1 [1 .. times]
+instance (Ord a, Floating a) => Ord (Complex a) where
+  compare :: (Ord a, Floating a) => Complex a -> Complex a -> Ordering
+  compare = compare `on` modulus
+
+instance (Floating a) => Num (Complex a) where
+  (+) :: Num a => Complex a -> Complex a -> Complex a
+  (+) (Complex x1 y1) (Complex x2 y2) = Complex (x1 + x2) (y1 + y2)
+
+  (*) :: Num a => Complex a -> Complex a -> Complex a
+  (*) (Complex x1 y1) (Complex x2 y2) = Complex (x1 * x2 - y1 * y2) (x1 * y2 + x2 * y1)
+
+  negate :: Num a => Complex a -> Complex a
+  negate (Complex x y) = Complex (negate x) (negate y)
+
+  abs :: Floating a => Complex a -> Complex a
+  abs = fromReal . modulus
+
+  signum :: Floating a => Complex a -> Complex a
+  signum = norm
+
+  fromInteger :: Integer -> Complex a
+  fromInteger x = Complex (fromInteger x) 0
 
 main = do
   let c1 = Complex 1 1
   let c2 = Complex 2 2.5
   let i = Complex 0 1
-  print (add c1 c2, multiply c1 c2, multiply c1 i, pow i 2, pow i 4)
-  print (fromReal 2 `multiply` c1)
+  print (c1 + c2, c1 * c2, c1 * i, i ^ 2, i ^ 4)
+  print (fromReal 2 * c1, c1 - fromReal 1 == i)
+  print (c1 < c2, c1 <= i, fromReal 2 * c2 > c2, i <= i, min c1 i)
+  print $ map modulus [c1, c2, i]
+  print $ map norm [c1, c2, i]
 
 -- TODO: implement bst insertion, and binary search
 data Tree a = Leaf | Node (Tree a) a (Tree a) deriving (Show)
@@ -38,7 +63,7 @@ insert item (Node leftTree nodeVal rightTree)
   | otherwise = Node leftTree nodeVal (insert item rightTree)
 
 fromList :: Ord a => [a] -> Tree a
-fromList = foldl (flip insert) Leaf
+fromList = foldr insert Leaf
 
 member :: Ord a => a -> Tree a -> Bool
 member item Leaf = False
@@ -61,6 +86,6 @@ treeLength = length . inOrder
 
 {-
 main = do
-  let tree = fromList [6, 3, 1, 5, 8, 9]
+  let tree = fromList [9, 3, 1, 5, 8, 6]
   print (tree, member 5 tree, member 10 tree, inOrder tree, height tree, treeLength tree)
 -}
