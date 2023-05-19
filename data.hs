@@ -25,6 +25,10 @@ member item (Node leftTree nodeVal rightTree)
   | item < nodeVal = member item leftTree
   | otherwise = member item rightTree
 
+inOrder :: Tree a -> [a]
+inOrder Leaf = []
+inOrder (Node leftTree nodeVal rightTree) = inOrder leftTree ++ [nodeVal] ++ inOrder rightTree
+
 main = do
   let tree = fromList [6, 3, 1, 5, 8, 9]
-  print (tree, member 5 tree, member 10 tree)
+  print (tree, member 5 tree, member 10 tree, inOrder tree)
