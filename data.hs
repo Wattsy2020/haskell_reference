@@ -1,5 +1,6 @@
 import Data.Function (on)
 import Data.List qualified as List
+import Data.Map qualified as Map
 
 data PeaNum = Succ PeaNum | Zero deriving (Show)
 
@@ -56,6 +57,7 @@ instance (Floating a) => Fractional (Complex a) where
   fromRational :: Rational -> Complex a
   fromRational x = Complex (fromRational x) 0
 
+{-
 main = do
   let c1 = Complex 1 1
   let c2 = Complex 2 2.5
@@ -69,6 +71,7 @@ main = do
   print (sum [c1, c2, i], product [c1, c2, i])
   print (conjugate i, 1 / i, 1 / i == i ^ 3)
   print (c1 / 2, c1 / c2, c1 / i)
+-}
 
 data Tree a = Leaf | Node (Tree a) a (Tree a) deriving (Show)
 
@@ -101,8 +104,30 @@ height (Node leftTree _ rightTree) = 1 + max (height leftTree) (height rightTree
 treeLength :: Tree a -> Int
 treeLength = length . inOrder
 
+instance Functor Tree where
+  fmap :: (a -> b) -> Tree a -> Tree b
+  fmap f Leaf = Leaf
+  fmap f (Node leftTree nodeVal rightTree) = Node (fmap f leftTree) (f nodeVal) (fmap f rightTree)
+
 {-
 main = do
   let tree = fromList [9, 3, 1, 5, 8, 6]
   print (tree, member 5 tree, member 10 tree, inOrder tree, height tree, treeLength tree)
+  print (fmap (* 2) tree, 0 <$ tree)
 -}
+
+-- instance Functor (Map.Map k) where
+fmap' :: Ord k => (v -> v') -> Map.Map k v -> Map.Map k v'
+fmap' f hashMap
+  | Map.null hashMap = Map.empty
+  | otherwise = Map.fromList mapped
+  where
+    kvs = Map.toList hashMap
+    mapped = map (fmap f) kvs -- fmap over the tuples
+
+-- define Functor for a 5 element tuple
+instance Functor ((,,,,) a b c d) where
+  fmap :: (e -> f) -> (a, b, c, d, e) -> (a, b, c, d, f)
+  fmap f (a, b, c, d, e) = (a, b, c, d, f e)
+
+main = print (fmap' (+ 1) (Map.fromList [("a", 1), ("b", 2)]), fmap (+ 1) (1, 2, 3, 4, 5))

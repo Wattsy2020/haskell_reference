@@ -1,21 +1,21 @@
 import Data.List qualified as List
 import Data.Set qualified as Set
 
--- a simple typeclass that allows us to check whether an element is contained by a Container
-class Container f a where
-  contains :: f a -> a -> Bool
+-- a typeclass that allows us to check whether an element is contained by a Container
+-- to be realistic in implementation, we need to have all elements in the container be Ord A
+class Container f where
+  contains :: Ord a => f a -> a -> Bool
 
-instance (Eq a) => Container [] a where
-  contains :: [a] -> a -> Bool
+instance Container [] where
+  contains :: Eq a => [a] -> a -> Bool
   contains = flip List.elem
 
-instance (Ord a) => Container Set.Set a where
-  contains :: Set.Set a -> a -> Bool
+instance Container Set.Set where
+  contains :: Ord a => Set.Set a -> a -> Bool
   contains = flip Set.member
 
--- TODO: figure out how to make a function an element of Container
--- data ContainerLambda a = ContainerLambda (a -> Bool)
--- instance Container ContainerLambda a where
+-- todo: figure out how to implement this for all functions that return a bool, e.g. (a -> Bool)
+-- for some reason it's hard to write that as a constraint
 
 main = do
   let list = [5 .. 10]
