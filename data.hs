@@ -1,4 +1,5 @@
 import Data.Function (on)
+import Data.List qualified as List
 
 data PeaNum = Succ PeaNum | Zero deriving (Show)
 
@@ -12,6 +13,9 @@ data Complex a = Complex a a deriving (Show, Eq)
 
 fromReal :: Num a => a -> Complex a
 fromReal x = Complex x 0
+
+conjugate :: Num a => Complex a -> Complex a
+conjugate (Complex x y) = Complex x (-y)
 
 modulus :: Floating a => Complex a -> a
 modulus (Complex x y) = sqrt (x ^ 2 + y ^ 2)
@@ -42,17 +46,30 @@ instance (Floating a) => Num (Complex a) where
   fromInteger :: Integer -> Complex a
   fromInteger x = Complex (fromInteger x) 0
 
+instance (Floating a) => Fractional (Complex a) where
+  (/) :: Floating a => Complex a -> Complex a -> Complex a
+  (/) c1 c2@(Complex x2 y2) = numerator * Complex (1 / denominator) 0
+    where
+      numerator = c1 * conjugate c2
+      denominator = (x2 ^ 2) + (y2 ^ 2)
+
+  fromRational :: Rational -> Complex a
+  fromRational x = Complex (fromRational x) 0
+
 main = do
   let c1 = Complex 1 1
   let c2 = Complex 2 2.5
   let i = Complex 0 1
   print (c1 + c2, c1 * c2, c1 * i, i ^ 2, i ^ 4)
-  print (fromReal 2 * c1, c1 - fromReal 1 == i)
-  print (c1 < c2, c1 <= i, fromReal 2 * c2 > c2, i <= i, min c1 i)
+  print (2 * c1, c1 - 1 == i)
+  print (c1 < c2, c1 <= i, 2 * c2 > c2, i <= i, min c1 i)
   print $ map modulus [c1, c2, i]
   print $ map norm [c1, c2, i]
+  print $ List.sort [c1, c2, i]
+  print (sum [c1, c2, i], product [c1, c2, i])
+  print (conjugate i, 1 / i, 1 / i == i ^ 3)
+  print (c1 / 2, c1 / c2, c1 / i)
 
--- TODO: implement bst insertion, and binary search
 data Tree a = Leaf | Node (Tree a) a (Tree a) deriving (Show)
 
 -- TODO: make it a self balancing Tree
