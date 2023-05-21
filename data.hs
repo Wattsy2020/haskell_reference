@@ -73,6 +73,64 @@ main = do
   print (c1 / 2, c1 / c2, c1 / i)
 -}
 
+data Fraction a = Fraction a a
+
+simplify :: (Integral a) => Fraction a -> Fraction a
+simplify (Fraction num denom) = Fraction (num `div` result) (denom `div` result)
+  where
+    result = gcd num denom
+
+instance (Show a) => Show (Fraction a) where
+  show :: Fraction a -> String
+  show (Fraction num denom) = show num ++ "/" ++ show denom
+
+instance (Integral a) => Eq (Fraction a) where
+  (==) :: Fraction a -> Fraction a -> Bool
+  (==) f1 f2 = (n1 == n2) && (d1 == d2)
+    where
+      (Fraction n1 d1) = simplify f1
+      (Fraction n2 d2) = simplify f2
+
+instance (Ord a, Integral a) => Ord (Fraction a) where
+  compare :: Fraction a -> Fraction a -> Ordering
+  compare (Fraction n1 d1) (Fraction n2 d2) = compare (n1 * d2) (n2 * d1)
+
+instance (Integral a) => Num (Fraction a) where
+  (+) :: Fraction a -> Fraction a -> Fraction a
+  (+) (Fraction n1 d1) (Fraction n2 d2) = Fraction (n1 * d2 + n2 * d1) (d1 * d2)
+
+  (*) :: Fraction a -> Fraction a -> Fraction a
+  (*) (Fraction n1 d1) (Fraction n2 d2) = Fraction (n1 * n2) (d1 * d2)
+
+  abs :: Fraction a -> Fraction a
+  abs (Fraction num denom) = Fraction (abs num) (abs denom)
+
+  signum :: Fraction a -> Fraction a
+  signum (Fraction num denom) = Fraction (signum num * signum denom) 1
+
+  negate :: Fraction a -> Fraction a
+  negate (Fraction num denom) = Fraction (negate num) denom
+
+  fromInteger :: Integer -> Fraction a
+  fromInteger int = Fraction (fromInteger int) 1
+
+fracRecip :: Fraction a -> Fraction a
+fracRecip (Fraction num denom) = Fraction denom num
+
+fracDiv :: Integral a => Fraction a -> Fraction a -> Fraction a
+fracDiv f1 f2 = f1 * fracRecip f2
+
+main = do
+  let f1 = Fraction 1 2
+  let f2 = Fraction 3 6
+  let f3 = Fraction 4 7
+  let f4 = Fraction 15 18
+  print (f1, f2, f3, f4)
+  print (simplify f1, simplify f2, simplify f3, simplify f4)
+  print (f1, f2, f3, f1 == f2, f1 < f3, f2 < f3, f4 > f3)
+  print (f1 + f1, 3 * f1, f1 * f1, f1 * f2, f2 + f1, -f1, f1 - f2, simplify $ f1 - f2)
+  print (1 `fracDiv` f1, f2 `fracDiv` f2)
+
 data Tree a = Leaf | Node (Tree a) a (Tree a) deriving (Show)
 
 -- TODO: make it a self balancing Tree
@@ -130,4 +188,4 @@ instance Functor ((,,,,) a b c d) where
   fmap :: (e -> f) -> (a, b, c, d, e) -> (a, b, c, d, f)
   fmap f (a, b, c, d, e) = (a, b, c, d, f e)
 
-main = print (fmap' (+ 1) (Map.fromList [("a", 1), ("b", 2)]), fmap (+ 1) (1, 2, 3, 4, 5))
+-- main = print (fmap' (+ 1) (Map.fromList [("a", 1), ("b", 2)]), fmap (+ 1) (1, 2, 3, 4, 5))
