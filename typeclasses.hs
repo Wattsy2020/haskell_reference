@@ -3,31 +3,30 @@ import Data.List qualified as List
 import Data.Set qualified as Set
 
 -- a typeclass that allows us to check whether an element is contained by a Container
--- to be realistic in implementation, we need to have all elements in the container be Ord A
-class Container f where
-  contains :: Ord a => f a -> a -> Bool
+class Container f a where
+  contains :: f a -> a -> Bool
 
-instance Container [] where
-  contains :: Eq a => [a] -> a -> Bool
+instance Eq a => Container [] a where
+  contains :: [a] -> a -> Bool
   contains = flip List.elem
 
-instance Container Set.Set where
-  contains :: Ord a => Set.Set a -> a -> Bool
+instance Ord a => Container Set.Set a where
+  contains :: Set.Set a -> a -> Bool
   contains = flip Set.member
 
 newtype LambdaContainer a = LambdaContainer (a -> Bool)
 
-instance Container LambdaContainer where
+instance Container LambdaContainer a where
   contains :: LambdaContainer a -> a -> Bool
   contains (LambdaContainer f) = f
 
-union :: (Container f1, Container f2, Ord a) => f1 a -> f2 a -> LambdaContainer a
+union :: (Container f1 a, Container f2 a) => f1 a -> f2 a -> LambdaContainer a
 union c1 c2 = LambdaContainer (\x -> contains c1 x && contains c2 x)
 
 allContainer :: LambdaContainer a
 allContainer = LambdaContainer (const True)
 
-toLambda :: (Container f, Ord a) => f a -> LambdaContainer a
+toLambda :: (Container f a) => f a -> LambdaContainer a
 toLambda container = LambdaContainer (contains container)
 
 main = do
