@@ -120,6 +120,7 @@ fracRecip (Fraction num denom) = Fraction denom num
 fracDiv :: Integral a => Fraction a -> Fraction a -> Fraction a
 fracDiv f1 f2 = f1 * fracRecip f2
 
+{-
 main = do
   let f1 = Fraction 1 2
   let f2 = Fraction 3 6
@@ -130,6 +131,7 @@ main = do
   print (f1, f2, f3, f1 == f2, f1 < f3, f2 < f3, f4 > f3)
   print (f1 + f1, 3 * f1, f1 * f1, f1 * f2, f2 + f1, -f1, f1 - f2, simplify $ f1 - f2)
   print (1 `fracDiv` f1, f2 `fracDiv` f2)
+-}
 
 data Tree a = Leaf | Node (Tree a) a (Tree a) deriving (Show)
 
@@ -167,12 +169,22 @@ instance Functor Tree where
   fmap f Leaf = Leaf
   fmap f (Node leftTree nodeVal rightTree) = Node (fmap f leftTree) (f nodeVal) (fmap f rightTree)
 
-{-
+-- fold the right node first, then fold the node val into that to get a new acc, finally fold the left node with that starting acc
+instance Foldable Tree where
+  foldr :: (a -> b -> b) -> b -> Tree a -> b
+  foldr _ acc Leaf = acc
+  foldr f acc (Node leftTree nodeVal rightTree) = foldr f (f nodeVal (foldr f acc rightTree)) leftTree
+
+countFoldable :: (Foldable f) => (a -> Bool) -> f a -> Int
+countFoldable predicate = foldr countPred 0
+  where
+    countPred x acc = acc + if predicate x then 1 else 0
+
 main = do
   let tree = fromList [9, 3, 1, 5, 8, 6]
   print (tree, member 5 tree, member 10 tree, inOrder tree, height tree, treeLength tree)
   print (fmap (* 2) tree, 0 <$ tree)
--}
+  print (sum tree, countFoldable (> 5) tree)
 
 -- instance Functor (Map.Map k) where
 fmap' :: Ord k => (v -> v') -> Map.Map k v -> Map.Map k v'
