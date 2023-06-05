@@ -3,7 +3,28 @@ import Data.Map qualified as Map
 
 -- Define a way to set up a simple compute graph with *, +, - operators
 -- It supports a forward pass (evaluate the graph) and backward pass (evaluate the gradient of the entire graph with respect to the variable)
-data Operator = Add | Subtract | Multiply | Divide | Abs | Signum deriving (Eq)
+data Operator
+  = Add
+  | Subtract
+  | Multiply
+  | Divide
+  | Abs
+  | Signum
+  | Exp
+  | Log
+  | Sqrt
+  | Pow
+  | Sin
+  | Cos
+  | Asin
+  | Acos
+  | Atan
+  | Sinh
+  | Cosh
+  | Asinh
+  | Acosh
+  | Atanh
+  deriving (Eq)
 
 instance Show Operator where
   show :: Operator -> String
@@ -13,6 +34,19 @@ instance Show Operator where
   show Divide = "/"
   show Abs = "abs"
   show Signum = "signum"
+  show Exp = "e^"
+  show Log = "log"
+  show Sqrt = "√"
+  show Pow = "^"
+  show Sin = "sin"
+  show Cos = "cos"
+  show Asin = "asin"
+  show Acos = "acos"
+  show Atan = "atan"
+  show Sinh = "sinh"
+  show Asinh = "asinh"
+  show Acosh = "acosh"
+  show Atanh = "atanh"
 
 data Node a
   = Node {inputNodes :: [Node a], operator :: Operator}
@@ -28,7 +62,7 @@ instance Show a => Show (Node a) where
       [x1, x2] -> "(" ++ show x1 ++ " " ++ show operator ++ " " ++ show x2 ++ ")"
       [x] -> "(" ++ show operator ++ " " ++ show x ++ ")"
 
-showDerivative :: (Show a, Eq a, Fractional a) => Node a -> String
+showDerivative :: (Show a, Eq a, Floating a) => Node a -> String
 showDerivative = show . derivative
 
 instance (Eq a) => Eq (Node a) where
@@ -83,7 +117,53 @@ instance (Eq a, Fractional a) => Fractional (Node a) where
   fromRational :: Rational -> Node a
   fromRational = Constant . fromRational
 
-evalNode :: Fractional a => Node a -> Map String a -> a
+instance (Eq a, Floating a) => Floating (Node a) where
+  pi :: Node a
+  pi = Constant pi
+
+  exp :: Node a -> Node a
+  exp n1 = Node [n1] Exp
+
+  log :: Node a -> Node a
+  log n1 = Node [n1] Log
+
+  sqrt :: Node a -> Node a
+  sqrt n1 = Node [n1] Sqrt
+
+  (**) :: Node a -> Node a -> Node a
+  (**) n1 n2 = Node [n1, n2] Pow
+
+  sin :: Node a -> Node a
+  sin n1 = Node [n1] Sin
+
+  cos :: Node a -> Node a
+  cos n1 = Node [n1] Cos
+
+  asin :: Node a -> Node a
+  asin n1 = Node [n1] Asin
+
+  acos :: Node a -> Node a
+  acos n1 = Node [n1] Acos
+
+  atan :: Node a -> Node a
+  atan n1 = Node [n1] Atan
+
+  sinh :: Node a -> Node a
+  sinh n1 = Node [n1] Sinh
+
+  cosh :: Node a -> Node a
+  cosh n1 = Node [n1] Cosh
+
+  asinh :: Node a -> Node a
+  asinh n1 = Node [n1] Asinh
+
+  acosh :: Node a -> Node a
+  acosh n1 = Node [n1] Acosh
+
+  atanh :: Node a -> Node a
+  atanh n1 = Node [n1] Atanh
+
+evalNode :: Floating a => Node a -> Map String a -> a
 evalNode (Constant num) _ = num
 evalNode (Variable name) varMap = varMap ! name
 evalNode (Node inputNodes operator) varMap =
@@ -93,10 +173,24 @@ evalNode (Node inputNodes operator) varMap =
         ([x1, x2], Subtract) -> x1 - x2
         ([x1, x2], Multiply) -> x1 * x2
         ([x1, x2], Divide) -> x1 / x2
+        ([x], Exp) -> exp x
+        ([x], Log) -> log x
+        ([x], Sqrt) -> sqrt x
+        ([x1, x2], Pow) -> x1 ** x2
+        ([x], Sin) -> sin x
+        ([x], Cos) -> cos x
+        ([x], Asin) -> asin x
+        ([x], Acos) -> acos x
+        ([x], Atan) -> atan x
+        ([x], Sinh) -> sinh x
+        ([x], Cosh) -> cosh x
+        ([x], Asinh) -> asinh x
+        ([x], Acosh) -> acosh x
+        ([x], Atanh) -> atanh x
         ([x], Abs) -> abs x
         ([x], Signum) -> signum x
 
-derivative :: (Eq a, Fractional a) => Node a -> Node a
+derivative :: (Eq a, Floating a) => Node a -> Node a
 derivative (Constant _) = Constant 0
 derivative (Variable _) = Constant 1
 derivative (Node inputNodes operator) =
@@ -105,18 +199,33 @@ derivative (Node inputNodes operator) =
     ([x1, x2], Subtract) -> derivative x1 - derivative x2
     ([x1, x2], Multiply) -> (x1 * derivative x2) + (derivative x1 * x2)
     ([x1, x2], Divide) -> ((x2 * derivative x1) - (x1 * derivative x2)) / (x2 * x2)
+    ([x], Exp) -> derivative x * exp x
+    ([x], Log) -> derivative x / x
+    ([x], Sqrt) -> derivative x / (2 * sqrt x)
+    ([x1, x2], Pow) -> derivative $ exp (log x1 * x2)
+    ([x], Sin) -> derivative x * cos x
+    ([x], Cos) -> derivative x * negate (sin x)
+    -- TODO: implement these
+    ([x], Asin) -> error "Not Implemented"
+    ([x], Acos) -> error "Not Implemented"
+    ([x], Atan) -> error "Not Implemented"
+    ([x], Sinh) -> error "Not Implemented"
+    ([x], Cosh) -> error "Not Implemented"
+    ([x], Asinh) -> error "Not Implemented"
+    ([x], Acosh) -> error "Not Implemented"
+    ([x], Atanh) -> error "Not Implemented"
     -- TODO: implement step functions as an operator, so we can define the derivative of abs and signum
     ([x], Abs) -> error "Not Implemented"
     ([x], Signum) -> error "Not Implemented"
 
-evalInputs :: Fractional a => Node a -> String -> [a] -> [a]
+evalInputs :: Floating a => Node a -> String -> [a] -> [a]
 evalInputs expr varName = map (evalNode expr . Map.singleton varName)
 
 main = do
   let var = Variable "x"
   let expr = 4 * (var + 5) * var
   print expr
-  print $ showDerivative expr
+  putStrLn $ showDerivative expr
   let varMap = Map.singleton "x" 5
   print $ evalNode expr varMap
   print $ evalNode (derivative expr) varMap
@@ -130,6 +239,11 @@ main = do
   print $ zip3 xs ys dydxs
 
   -- differentiate a fairly complicated function
-  let expr = var * var / (1 + var)
-  print expr
-  print $ showDerivative expr
+  let expr2 = var * var / (1 + var)
+  print expr2
+  putStrLn $ showDerivative expr2
+
+  -- differentiate floating function
+  let expr3 = exp (cos (var ** 2))
+  print expr3
+  putStrLn $ showDerivative expr3
