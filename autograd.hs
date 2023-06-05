@@ -3,13 +3,14 @@ import Data.Map qualified as Map
 
 -- Define a way to set up a simple compute graph with *, +, - operators
 -- It supports a forward pass (evaluate the graph) and backward pass (evaluate the gradient of the entire graph with respect to the variable)
-data Operator = Add | Subtract | Multiply | Abs | Signum
+data Operator = Add | Subtract | Multiply | Divide | Abs | Signum
 
 instance Show Operator where
   show :: Operator -> String
   show Add = "+"
   show Subtract = "-"
   show Multiply = "*"
+  show Divide = "/"
   show Abs = "abs"
   show Signum = "signum"
 
@@ -27,7 +28,7 @@ instance Show a => Show (Node a) where
       [x1, x2] -> "(" ++ show x1 ++ " " ++ show operator ++ " " ++ show x2 ++ ")"
       [x] -> "(" ++ show operator ++ " " ++ show x ++ ")"
 
-showDerivative :: (Show a, Eq a, Num a) => Node a -> String
+showDerivative :: (Show a, Eq a, Fractional a) => Node a -> String
 showDerivative = show . derivative
 
 instance (Eq a, Num a) => Num (Node a) where
@@ -59,7 +60,17 @@ instance (Eq a, Num a) => Num (Node a) where
   fromInteger :: Integer -> Node a
   fromInteger = Constant . fromInteger
 
-evalNode :: Num a => Node a -> Map String a -> a
+instance (Eq a, Fractional a) => Fractional (Node a) where
+  (/) :: Node a -> Node a -> Node a
+  (/) (Constant x1) (Constant x2) = Constant $ x1 / x2
+  (/) (Constant 0) _ = Constant 0
+  (/) var (Constant 1) = var
+  (/) n1 n2 = Node [n1, n2] Divide
+
+  fromRational :: Rational -> Node a
+  fromRational = Constant . fromRational
+
+evalNode :: Fractional a => Node a -> Map String a -> a
 evalNode (Constant num) _ = num
 evalNode (Variable name) varMap = varMap ! name
 evalNode (Node inputNodes operator) varMap =
@@ -68,10 +79,11 @@ evalNode (Node inputNodes operator) varMap =
         ([x1, x2], Add) -> x1 + x2
         ([x1, x2], Subtract) -> x1 - x2
         ([x1, x2], Multiply) -> x1 * x2
+        ([x1, x2], Divide) -> x1 / x2
         ([x], Abs) -> abs x
         ([x], Signum) -> signum x
 
-derivative :: (Eq a, Num a) => Node a -> Node a
+derivative :: (Eq a, Fractional a) => Node a -> Node a
 derivative (Constant _) = Constant 0
 derivative (Variable _) = Constant 1
 derivative (Node inputNodes operator) =
@@ -79,11 +91,12 @@ derivative (Node inputNodes operator) =
     ([x1, x2], Add) -> derivative x1 + derivative x2
     ([x1, x2], Subtract) -> derivative x1 - derivative x2
     ([x1, x2], Multiply) -> (x1 * derivative x2) + (derivative x1 * x2)
+    ([x1, x2], Divide) -> ((x2 * derivative x1) - (x1 * derivative x2)) / (x2 * x2)
     -- TODO: implement step functions as an operator, so we can define the derivative of abs and signum
     ([x], Abs) -> error "Not Implemented"
     ([x], Signum) -> error "Not Implemented"
 
-evalInputs :: Num a => Node a -> String -> [a] -> [a]
+evalInputs :: Fractional a => Node a -> String -> [a] -> [a]
 evalInputs expr varName = map (evalNode expr . Map.singleton varName)
 
 main = do
@@ -102,3 +115,8 @@ main = do
   let dydxs = evalInputs (derivative parabola) "x" xs
   print (parabola, showDerivative parabola)
   print $ zip3 xs ys dydxs
+
+  -- differentiate a fairly complicated function
+  let expr = var * var / (1 + var)
+  print expr
+  print $ showDerivative expr
