@@ -27,17 +27,27 @@ instance Show a => Show (Node a) where
       [x1, x2] -> "(" ++ show x1 ++ " " ++ show operator ++ " " ++ show x2 ++ ")"
       [x] -> "(" ++ show operator ++ " " ++ show x ++ ")"
 
-showDerivative :: (Show a, Num a) => Node a -> String
+showDerivative :: (Show a, Eq a, Num a) => Node a -> String
 showDerivative = show . derivative
 
-instance Num a => Num (Node a) where
+instance (Eq a, Num a) => Num (Node a) where
   (+) :: Node a -> Node a -> Node a
+  (+) (Constant x1) (Constant x2) = Constant $ x1 + x2
+  (+) (Constant 0) var = var
+  (+) var (Constant 0) = var
   (+) n1 n2 = Node [n1, n2] Add
 
   (-) :: Node a -> Node a -> Node a
+  (-) (Constant x1) (Constant x2) = Constant $ x1 - x2
+  (-) var (Constant 0) = var
   (-) n1 n2 = Node [n1, n2] Subtract
 
   (*) :: Node a -> Node a -> Node a
+  (*) (Constant x1) (Constant x2) = Constant $ x1 * x2
+  (*) (Constant 0) _ = Constant 0
+  (*) _ (Constant 0) = Constant 0
+  (*) (Constant 1) var = var
+  (*) var (Constant 1) = var
   (*) n1 n2 = Node [n1, n2] Multiply
 
   abs :: Node a -> Node a
@@ -61,7 +71,7 @@ evalNode (Node inputNodes operator) varMap =
         ([x], Abs) -> abs x
         ([x], Signum) -> signum x
 
-derivative :: Num a => Node a -> Node a
+derivative :: (Eq a, Num a) => Node a -> Node a
 derivative (Constant _) = Constant 0
 derivative (Variable _) = Constant 1
 derivative (Node inputNodes operator) =
