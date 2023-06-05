@@ -36,11 +36,17 @@ instance (Eq a, Num a) => Num (Node a) where
   (+) (Constant x1) (Constant x2) = Constant $ x1 + x2
   (+) (Constant 0) var = var
   (+) var (Constant 0) = var
+  (+) n1@(Variable name1) n2@(Variable name2)
+    | name1 == name2 = 2 * n1
+    | otherwise = Node [n1, n2] Add
   (+) n1 n2 = Node [n1, n2] Add
 
   (-) :: Node a -> Node a -> Node a
   (-) (Constant x1) (Constant x2) = Constant $ x1 - x2
   (-) var (Constant 0) = var
+  (-) n1@(Variable name1) n2@(Variable name2)
+    | name1 == name2 = Constant 0
+    | otherwise = Node [n1, n2] Subtract
   (-) n1 n2 = Node [n1, n2] Subtract
 
   (*) :: Node a -> Node a -> Node a
