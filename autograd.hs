@@ -73,24 +73,43 @@ instance (Eq a) => Eq (Node a) where
     (Constant num1, Constant num2) -> num1 == num2
     (Variable name1, Variable name2) -> name1 == name2
     (Node input1 op1, Node input2 op2) -> input1 == input2 && op1 == op2
+    _ -> False
 
 instance (Eq a, Num a) => Num (Node a) where
   (+) :: Node a -> Node a -> Node a
   (+) (Constant x1) (Constant x2) = Constant $ x1 + x2
   (+) (Constant 0) var = var
   (+) var (Constant 0) = var
-  (+) n1@(Variable name1) n2@(Variable name2)
-    | name1 == name2 = 2 * n1
-    | otherwise = Node [n1, n2] Add
-  (+) n1 n2 = Node [n1, n2] Add
+  (+) n1 n2
+    | n1 == n2 = 2 * n1
+    | otherwise =
+        let baseCase = Node [n1, n2] Add
+         in case (n1, n2) of
+              -- also need to handle case where either one of the nodes is a multiple, and the other is just the same node
+              (Node [m1, node1] Multiply, Node [m2, node2] Multiply) ->
+                if node1 == node2 then Node [m1 + m2, node1] Multiply else baseCase
+              (Node [m1, node1] Multiply, node2) ->
+                if node1 == node2 then Node [m1 + 1, node1] Multiply else baseCase
+              (node1, Node [m2, node2] Multiply) ->
+                if node1 == node2 then Node [m2 + 1, node2] Multiply else baseCase
+              _ -> baseCase
 
   (-) :: Node a -> Node a -> Node a
   (-) (Constant x1) (Constant x2) = Constant $ x1 - x2
   (-) var (Constant 0) = var
-  (-) n1@(Variable name1) n2@(Variable name2)
-    | name1 == name2 = Constant 0
-    | otherwise = Node [n1, n2] Subtract
-  (-) n1 n2 = Node [n1, n2] Subtract
+  (-) n1 n2
+    | n1 == n2 = Constant 0
+    | otherwise =
+        let baseCase = Node [n1, n2] Subtract
+         in case (n1, n2) of
+              -- also need to handle case where either one of the nodes is a multiple, and the other is just the same node
+              (Node [m1, node1] Multiply, Node [m2, node2] Multiply) ->
+                if node1 == node2 then Node [m1 - m2, node1] Multiply else baseCase
+              (Node [m1, node1] Multiply, node2) ->
+                if node1 == node2 then Node [m1 - 1, node1] Multiply else baseCase
+              (node1, Node [m2, node2] Multiply) ->
+                if node1 == node2 then Node [m2 - 1, node2] Multiply else baseCase
+              _ -> baseCase
 
   (*) :: Node a -> Node a -> Node a
   (*) (Constant 0) _ = Constant 0
@@ -253,7 +272,7 @@ main = do
   print $ zip3 xs ys dydxs
 
   -- check that multiplication can be simplified
-  let expr1 = negate 2 * (var ** 2) * 2 + 4 * var ** 3 + 5 * var ** 2
+  let expr1 = (negate 2 * (var ** 2) * 2) + (5 * var ** 2) + (var ** 2) + ((4 * var ** 3) - (var ** 3))
   putStrLn "\n"
   print expr1
   putStrLn $ showDerivative expr1
