@@ -8,6 +8,7 @@ data Operator
   | Subtract
   | Multiply
   | Divide
+  | Negate
   | Abs
   | Signum
   | Exp
@@ -32,6 +33,7 @@ instance Show Operator where
   show Subtract = "-"
   show Multiply = "*"
   show Divide = "/"
+  show Negate = "-"
   show Abs = "abs"
   show Signum = "signum"
   show Exp = "e^"
@@ -91,12 +93,21 @@ instance (Eq a, Num a) => Num (Node a) where
   (-) n1 n2 = Node [n1, n2] Subtract
 
   (*) :: Node a -> Node a -> Node a
-  (*) (Constant x1) (Constant x2) = Constant $ x1 * x2
   (*) (Constant 0) _ = Constant 0
   (*) _ (Constant 0) = Constant 0
   (*) (Constant 1) var = var
   (*) var (Constant 1) = var
-  (*) n1 n2 = Node [n1, n2] Multiply
+  -- always keep the constant as the first term, so simplifications can be done easily
+  (*) (Constant x1) (Constant x2) = Constant $ x1 * x2
+  (*) n1 n2@(Constant _) = n2 * n1
+  -- check if both terms have constants in them
+  (*) n1 n2 = case (n1, n2) of
+    (Constant c1, Node [Constant c2, node2] Multiply) -> Node [Constant (c1 * c2), node2] Multiply
+    (node1, node2) -> Node [node1, node2] Multiply
+
+  negate :: Node a -> Node a
+  negate (Constant x1) = Constant $ negate x1
+  negate n1 = Node [n1] Negate
 
   abs :: Node a -> Node a
   abs n1 = Node [n1] Abs
@@ -173,6 +184,7 @@ evalNode (Node inputNodes operator) varMap =
         ([x1, x2], Subtract) -> x1 - x2
         ([x1, x2], Multiply) -> x1 * x2
         ([x1, x2], Divide) -> x1 / x2
+        ([x], Negate) -> negate x
         ([x], Exp) -> exp x
         ([x], Log) -> log x
         ([x], Sqrt) -> sqrt x
@@ -199,10 +211,12 @@ derivative (Node inputNodes operator) =
     ([x1, x2], Subtract) -> derivative x1 - derivative x2
     ([x1, x2], Multiply) -> (x1 * derivative x2) + (derivative x1 * x2)
     ([x1, x2], Divide) -> ((x2 * derivative x1) - (x1 * derivative x2)) / (x2 * x2)
+    ([x], Negate) -> negate $ derivative x
     ([x], Exp) -> derivative x * exp x
     ([x], Log) -> derivative x / x
     ([x], Sqrt) -> derivative x / (2 * sqrt x)
-    ([x1, x2], Pow) -> derivative $ exp (log x1 * x2)
+    ([x1, x2@(Constant _)], Pow) -> x2 * (x1 ** (x2 - 1))
+    ([x1, x2], Pow) -> derivative (log x1 * x2) * (x1 ** x2) -- i.e. derivative of e^(log x1 * x2), just expressed nicer (with x1 ** x2 at the end)
     ([x], Sin) -> derivative x * cos x
     ([x], Cos) -> derivative x * negate (sin x)
     -- TODO: implement these
@@ -238,6 +252,13 @@ main = do
   print (parabola, showDerivative parabola)
   print $ zip3 xs ys dydxs
 
+  -- check that multiplication can be simplified
+  let expr1 = negate 2 * (var ** 2) * 2 + 4 * var ** 3 + 5 * var ** 2
+  putStrLn "\n"
+  print expr1
+  putStrLn $ showDerivative expr1
+  putStrLn "\n"
+
   -- differentiate a fairly complicated function
   let expr2 = var * var / (1 + var)
   print expr2
@@ -247,3 +268,4 @@ main = do
   let expr3 = exp (cos (var ** 2))
   print expr3
   putStrLn $ showDerivative expr3
+  print (evalNode expr3 (Map.singleton "x" $ sqrt pi), exp (-1))
