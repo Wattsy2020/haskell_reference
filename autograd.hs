@@ -3,7 +3,7 @@ import Data.Map qualified as Map
 
 -- Define a way to set up a simple compute graph with *, +, - operators
 -- It supports a forward pass (evaluate the graph) and backward pass (evaluate the gradient of the entire graph with respect to the variable)
-data Operator = Add | Subtract | Multiply | Divide | Abs | Signum
+data Operator = Add | Subtract | Multiply | Divide | Abs | Signum deriving (Eq)
 
 instance Show Operator where
   show :: Operator -> String
@@ -30,6 +30,13 @@ instance Show a => Show (Node a) where
 
 showDerivative :: (Show a, Eq a, Fractional a) => Node a -> String
 showDerivative = show . derivative
+
+instance (Eq a) => Eq (Node a) where
+  (==) :: Node a -> Node a -> Bool
+  (==) n1 n2 = case (n1, n2) of
+    (Constant num1, Constant num2) -> num1 == num2
+    (Variable name1, Variable name2) -> name1 == name2
+    (Node input1 op1, Node input2 op2) -> input1 == input2 && op1 == op2
 
 instance (Eq a, Num a) => Num (Node a) where
   (+) :: Node a -> Node a -> Node a
