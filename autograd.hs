@@ -97,6 +97,8 @@ instance (Eq a, Num a) => Num (Node a) where
   (-) :: Node a -> Node a -> Node a
   (-) (Constant x1) (Constant x2) = Constant $ x1 - x2
   (-) var (Constant 0) = var
+  (-) n1 (Node [n2] Negate) = n1 + n2
+  (-) n1 (Node [Constant c1, n2] Multiply) = n1 + Node [Constant (negate c1), n2] Multiply
   (-) n1 n2
     | n1 == n2 = Constant 0
     | otherwise =
@@ -126,6 +128,8 @@ instance (Eq a, Num a) => Num (Node a) where
 
   negate :: Node a -> Node a
   negate (Constant x1) = Constant $ negate x1
+  negate (Node [n1] Negate) = n1
+  negate (Node [Constant c1, n2] Multiply) = Node [Constant (negate c1), n2] Multiply
   negate n1 = Node [n1] Negate
 
   abs :: Node a -> Node a
@@ -271,20 +275,23 @@ main = do
   print (parabola, showDerivative parabola)
   print $ zip3 xs ys dydxs
 
-  -- check that multiplication can be simplified
-  let expr1 = (negate 2 * (var ** 2) * 2) + (5 * var ** 2) + (var ** 2) + ((4 * var ** 3) - (var ** 3))
-  putStrLn "\n"
+  -- check double negatives are handled well
+  let expr1 = negate (negate (5 * var)) - (negate var) + (negate (negate 2 * var))
   print expr1
   putStrLn $ showDerivative expr1
-  putStrLn "\n"
 
-  -- differentiate a fairly complicated function
-  let expr2 = var * var / (1 + var)
+  -- check that multiplication can be simplified
+  let expr2 = (negate 2 * (var ** 2) * 2) + (5 * var ** 2) + (var ** 2) + ((4 * var ** 3) - (var ** 3))
   print expr2
   putStrLn $ showDerivative expr2
 
-  -- differentiate floating function
-  let expr3 = exp (cos (var ** 2))
+  -- differentiate a fairly complicated function
+  let expr3 = var * var / (1 + var)
   print expr3
   putStrLn $ showDerivative expr3
-  print (evalNode expr3 (Map.singleton "x" $ sqrt pi), exp (-1))
+
+  -- differentiate floating function
+  let expr4 = exp (cos (var ** 2))
+  print expr4
+  putStrLn $ showDerivative expr4
+  print (evalNode expr4 (Map.singleton "x" $ sqrt pi), exp (-1))
