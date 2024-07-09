@@ -22,6 +22,11 @@ data List x y where
   Nil :: List a Empty
   Cons :: a -> List a b -> List a NonEmpty
 
+instance (Show a) => Show (List a b) where
+  show :: List a b -> String
+  show Nil = "Nil"
+  show (Cons x xs) = show x <> " : " <> show xs
+
 safeHead :: List x NonEmpty -> x
 safeHead (Cons a b) = a
 
@@ -35,6 +40,23 @@ safeSum (Cons x xs) = case xs of
   Nil -> x
   (Cons x2 xs2) -> x + safeSum xs
 
+-- Now though we can't define a function that returns either Nil or Cons, the compiler rejects it
+-- silly :: Int -> List Int b
+-- silly 0 = Nil
+-- silly 1 = Cons 1 Nil
+
+-- can however take both and produce a single one
+append :: List a b -> a -> List a NonEmpty
+append Nil item = Cons item Nil
+append (Cons x xs) item = Cons x $ append xs item
+
+-- can also preserve the type of b
+reverseList :: List a b -> List a b
+reverseList Nil = Nil
+reverseList (Cons x xs) = append (reverseList xs) x
+-- reverseList (Cons x xs) = reverseList xs  
+-- is detected as an error as reverseList xs is not guaranteed to be Cons
+
 main :: IO ()
 main = do
   print $ intp (Con 1)
@@ -46,5 +68,7 @@ main = do
   -- safehead only supports NonEmpty lists
   print $ safeHead list
   print $ safeSum list
+  print $ append list 1
+  print $ reverseList list
   where
     list = Cons 5 $ Cons 2 $ Cons 3 Nil
