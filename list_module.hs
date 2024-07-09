@@ -6,13 +6,13 @@ import Data.Function (on)
 -- reimplementations of functions in Data.List
 
 -- add x to the list if it is not already contained in it
-addIfUnique :: Eq a => a -> [a] -> [a]
+addIfUnique :: (Eq a) => a -> [a] -> [a]
 addIfUnique x xs
   | x `elem` xs = xs
   | otherwise = x : xs
 
 -- return a list with only unique elements
-nub' :: Eq a => [a] -> [a]
+nub' :: (Eq a) => [a] -> [a]
 nub' = foldr addIfUnique []
 
 -- main = print (nub' [1, 2, 3, 4, 3, 2], nub' [1, 1, 1], nub' [1, 2, 3])
@@ -131,7 +131,7 @@ takeRange low high = takeWhile' (< high) . dropWhile' (< low)
 -- iterateContext can be used to define the fibonacci sequence in a "backwards recursive" manner, no need for memoization!
 -- in reality this is just like an infinite generator in python
 fib :: [Integer]
-fib = iterateContext (\(n2, n1) -> n2 + n1) (\(_, n1) n -> (n1, n)) (0, 1)
+fib = iterateContext (uncurry (+)) (\(_, n1) n -> (n1, n)) (0, 1)
 
 -- main = print $ sum $ take 10000 fib
 phi :: Double
@@ -166,13 +166,13 @@ testList2 = [1, 2, 3, 4, 5, 6, 7, 3, 9]
 -- main = print (span' (< 5) testList2, break (== 5) testList2, partition' (< 5) testList2)
 
 -- add newElem to the current list if it is the same elem, otherwise create a new list
-accAdjacent :: Eq a => a -> [[a]] -> [[a]]
+accAdjacent :: (Eq a) => a -> [[a]] -> [[a]]
 accAdjacent newElem [[]] = [[newElem]]
 accAdjacent newElem accLists@(accList : accLists')
   | newElem == head accList = (newElem : accList) : accLists'
   | otherwise = [newElem] : accLists
 
-group' :: Eq a => [a] -> [[a]]
+group' :: (Eq a) => [a] -> [[a]]
 group' = foldr accAdjacent [[]]
 
 -- main = print $ group' [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 2, 2, 2, 5, 6, 7]
@@ -227,10 +227,10 @@ inits' xs = scanr (\_ acc -> init' acc) xs xs
 
 -- main = print (tails' [1, 2, 3, 4], inits' [1, 2, 3, 4])
 
-isPrefixOf' :: Eq a => [a] -> [a] -> Bool
+isPrefixOf' :: (Eq a) => [a] -> [a] -> Bool
 isPrefixOf' prefix xs = prefix == take (length prefix) xs
 
-isSuffixOf' :: Eq a => [a] -> [a] -> Bool
+isSuffixOf' :: (Eq a) => [a] -> [a] -> Bool
 isSuffixOf' suffix = isPrefixOf' (reverse' suffix) . reverse'
 
 -- main = print (isPrefixOf' "hello" "hello there!", isPrefixOf' "hello" "hey", isSuffixOf' "there" "hello there")
@@ -253,18 +253,18 @@ testList3 = [1, 2, 3, 4, 5, 6]
 
 -- main = print (find' (> 4) testList3, find' (> 9) testList3, findIndex' (> 4) testList3)
 
-elemIndexCount :: Eq a => Int -> a -> [a] -> Maybe Int
+elemIndexCount :: (Eq a) => Int -> a -> [a] -> Maybe Int
 elemIndexCount _ _ [] = Nothing
 elemIndexCount idx item (x : xs)
   | item == x = Just idx
   | otherwise = elemIndexCount (idx + 1) item xs
 
-elemIndex' :: Eq a => a -> [a] -> Maybe Int
+elemIndex' :: (Eq a) => a -> [a] -> Maybe Int
 elemIndex' = elemIndexCount 0
 
 -- main = print (elemIndex' 4 testList3, elemIndex' 1 testList3, elemIndex' 10 testList3)
 
-elemIndicesCount :: Eq a => Int -> a -> [a] -> [Int]
+elemIndicesCount :: (Eq a) => Int -> a -> [a] -> [Int]
 elemIndicesCount _ _ [] = []
 elemIndicesCount idx item (x : xs)
   | item == x = idx : remaining
@@ -272,7 +272,7 @@ elemIndicesCount idx item (x : xs)
   where
     remaining = elemIndicesCount (idx + 1) item xs
 
-elemIndices' :: Eq a => a -> [a] -> [Int]
+elemIndices' :: (Eq a) => a -> [a] -> [Int]
 elemIndices' = elemIndicesCount 0
 
 -- main = print $ ' ' `elemIndices'` "Where are the spaces?"
@@ -310,7 +310,7 @@ words' = foldr accWords [""]
 
 -- main = print (words "hello there", words "hey these           are    the words in this\nsentence")
 
-delete' :: Eq a => a -> [a] -> [a]
+delete' :: (Eq a) => a -> [a] -> [a]
 delete' _ [] = []
 delete' item (x : xs)
   | x == item = xs
@@ -319,24 +319,24 @@ delete' item (x : xs)
 -- main = print (delete' 5 [1, 2, 5, 3], delete' 5 [1, 2, 6])
 
 -- remove elements in list1 that are present in list2
-difference :: Eq a => [a] -> [a] -> [a]
+difference :: (Eq a) => [a] -> [a] -> [a]
 difference = foldl (flip delete')
 
-union' :: Eq a => [a] -> [a] -> [a]
+union' :: (Eq a) => [a] -> [a] -> [a]
 union' list1 list2 = list1 ++ difference list2 list1
 
-addIfElem :: Eq a => [a] -> a -> [a] -> [a]
+addIfElem :: (Eq a) => [a] -> a -> [a] -> [a]
 addIfElem checkList x currList
   | x `elem` checkList = x : currList
   | otherwise = currList
 
-intersect' :: Eq a => [a] -> [a] -> [a]
+intersect' :: (Eq a) => [a] -> [a] -> [a]
 intersect' list1 list2 = foldr (addIfElem list2) [] list1
 
 -- main = print (difference [1 .. 7] [5 .. 10], union' [1 .. 7] [5 .. 10], intersect' [1 .. 7] [5 .. 10])
 
 -- insert element into a list, preserving the list if it is sorted
-insert' :: Ord a => a -> [a] -> [a]
+insert' :: (Ord a) => a -> [a] -> [a]
 insert' item xs = first ++ [item] ++ remaining
   where
     (first, remaining) = span' (<= item) xs

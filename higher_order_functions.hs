@@ -8,7 +8,7 @@ all' (x : xs) = x && all' xs
 
 -- main = print (all' [True, True], all' [True, True, False])
 
-replicate' :: Integral b => a -> b -> [a]
+replicate' :: (Integral b) => a -> b -> [a]
 replicate' item times
   | times < 0 = error "cannot replicate a negative amount of times"
   | times == 0 = []
@@ -23,7 +23,7 @@ zip' (x : xs) (y : ys) = (x, y) : zip' xs ys
 
 -- main = print (zip' [1, 2, 3] [1, 2])
 
-elem' :: Eq a => a -> [a] -> Bool
+elem' :: (Eq a) => a -> [a] -> Bool
 elem' _ [] = False
 elem' item (x : xs) = item == x || elem' item xs
 
@@ -36,7 +36,7 @@ zipWith' f (x : xs) (y : ys) = f x y : zipWith' f xs ys
 
 --  main = print (zipWith' (+) [1,2,3] [4, 5, 6])
 
-dotProd :: Num a => [a] -> [a] -> a
+dotProd :: (Num a) => [a] -> [a] -> a
 dotProd xs ys = sum (zipWith (*) xs ys)
 
 -- main = print (dotProd [1, 2, 3] [4, 5, 6])
@@ -49,7 +49,7 @@ squareSum = sum (filter odd (takeWhile (< 10000) [x ^ 2 | x <- [1 ..]]))
 
 -- main = print squareSum
 
-nextCollatz :: Integral a => a -> a
+nextCollatz :: (Integral a) => a -> a
 nextCollatz x
   | odd x = 3 * x + 1
   | otherwise = x `div` 2
@@ -59,7 +59,7 @@ nextCollatz x
 recurseList :: (a -> a) -> a -> [a]
 recurseList f x = x : recurseList f (f x)
 
-collatzChain :: Integral a => a -> [a]
+collatzChain :: (Integral a) => a -> [a]
 collatzChain = recurseList nextCollatz
 
 -- main = print (take 10 (collatzChain 9))
@@ -81,7 +81,7 @@ numLongCollatz = length (filter (> 15) (map collatzLength [1 .. 100]))
 -- main = print numLongCollatz
 
 -- compute the moving average of a list
-expMean :: Fractional a => [a] -> [a]
+expMean :: (Fractional a) => [a] -> [a]
 expMean = scanl1 (\acc x -> 0.9 * acc + 0.1 * x)
 
 -- main = print (expMean (map (fromIntegral . collatzLength) [1..100]))
@@ -91,12 +91,12 @@ all2 :: [Bool] -> Bool
 all2 = foldl (&&) True -- can also just use the and func
 -- main = print (all2 [True, True], all2 [True, True, False])
 
-elem2 :: Eq a => a -> [a] -> Bool
+elem2 :: (Eq a) => a -> [a] -> Bool
 elem2 item = foldl (\acc x -> acc || item == x) False
 
 -- main = print (elem2 1 [3, 1, 2], elem2 "Hello" ["There", "Kenobi", "Hello"], elem2 42 [1, 2, 3], elem2 1 [])
 
-sum' :: Num a => [a] -> a
+sum' :: (Num a) => [a] -> a
 sum' = foldr (+) 0
 
 -- main = print (sum [1, 2, 3, 4])
@@ -134,7 +134,7 @@ foldl' _ acc [] = acc
 foldl' accFunc acc (x : xs) = foldl' accFunc (accFunc acc x) xs
 
 -- define elem using currying
-elem3 :: Eq a => a -> [a] -> Bool
+elem3 :: (Eq a) => a -> [a] -> Bool
 elem3 item = foldl' (\acc x -> acc || (item == x)) False
 
 -- main = print (elem3 1 [3, 1, 2], elem3 "Hello" ["There", "Kenobi", "Hello"], elem3 'H' "Hello", elem3 42 [1, 2, 3], elem3 1 [])
@@ -143,12 +143,12 @@ elem3 item = foldl' (\acc x -> acc || (item == x)) False
 foldl1' :: (a -> a -> a) -> [a] -> a
 foldl1' accFunc (x : xs) = foldl' accFunc x xs
 
-product' :: Num a => [a] -> a
+product' :: (Num a) => [a] -> a
 product' = foldl1' (*)
 
 -- main = print (product' [1, 2, 3], product' [-1, 9, 2], product' [9, -100, 0])
 
-distance :: Integral a => a -> a -> a
+distance :: (Integral a) => a -> a -> a
 distance a b = abs (a - b)
 
 -- a = (compare `on` distance 1) 0 2 -- the `on` function means: call (distance 1) on the two elements first, then apply compare to the two resulting values

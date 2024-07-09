@@ -31,7 +31,7 @@ safeHead (Cons a b) = a
 -- can do normal function things,
 -- ensuring we never pass an empty list (whose sum is undefined) to safeSum
 safeSum :: List Int NonEmpty -> Int
-safeSum (Cons x xs) = case xs of 
+safeSum (Cons x xs) = case xs of
   Nil -> x
   (Cons x2 xs2) -> x + safeSum xs
 
