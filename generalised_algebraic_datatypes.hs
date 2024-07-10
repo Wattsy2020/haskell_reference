@@ -50,10 +50,14 @@ append :: List a b -> a -> List a NonEmpty
 append Nil item = Cons item Nil
 append (Cons x xs) item = Cons x $ append xs item
 
+reverseList' :: List a b -> List a NonEmpty -> List a NonEmpty
+reverseList' Nil acc = acc
+reverseList' (Cons x xs) acc = reverseList' xs (Cons x acc)
+
 -- can also preserve the type of b
 reverseList :: List a b -> List a b
 reverseList Nil = Nil
-reverseList (Cons x xs) = append (reverseList xs) x
+reverseList (Cons x xs) = reverseList' xs (Cons x Nil)
 -- reverseList (Cons x xs) = reverseList xs  
 -- is detected as an error as reverseList xs is not guaranteed to be Cons
 
