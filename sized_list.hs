@@ -2,53 +2,37 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 
--- see https://www.parsonsmatt.org/2017/04/26/basic_type_level_programming_in_haskell.html
--- to understand how functions on types work
+data Natural = Zero | Succ Natural
+type One = Succ Zero
 
--- Emptiness is now a Kind, defining two types that belong to the Emptiness Kind: Empty and NonEmpty
-data Emptiness = Empty | NonEmpty
+type family Add (num1 :: Natural) (num2 :: Natural) where
+    Add 'Zero x = x
+    Add ('Succ x) x2 = 'Succ (Add x x2)
 
--- type function: a function on all types with Kind of Emptiness, that maps to a type of Kind Emptiness
--- intended for combining Empty and NonEmpty lists, which results in a non empty List
-type family Combine (emptyStatus1 :: Emptiness) (emptyStatus2 :: Emptiness) where
-  Combine 'Empty 'Empty = 'Empty
-  Combine 'Empty 'NonEmpty = 'NonEmpty
-  Combine 'NonEmpty 'Empty = 'NonEmpty
-  Combine 'NonEmpty 'NonEmpty = 'NonEmpty
+data List (size :: Natural) elem where
+    Nil :: List 'Zero elem
+    Cons :: elem -> List n elem -> List ('Succ n) elem
 
--- the second type y is either Empty or NonEmpty, we can use this to control what types a function accepts
-data List x (emptiness :: Emptiness) where
-  Nil :: List a 'Empty -- here we use 'Empty as a type
-  Cons :: a -> List a b -> List a 'NonEmpty
-
-instance (Show a) => Show (List a b) where
-  show :: List a b -> String
+instance (Show elem) => Show (List n elem) where
+  show :: List n elem -> String
   show Nil = "Nil"
   show (Cons x xs) = show x <> " : " <> show xs
 
-singleton :: a -> List a NonEmpty
+singleton :: elem -> List One elem
 singleton x = Cons x Nil
 
-safeHead :: List a NonEmpty -> a
-safeHead (Cons x xs) = x
+headList :: List (Succ n) elem -> elem
+headList (Cons x xs) = x
 
-safeLast :: List a NonEmpty -> a
-safeLast (Cons x Nil) = x
-safeLast (Cons x xs@(Cons _ _)) = safeLast xs
+lastList :: List (Succ n) elem -> elem
+lastList (Cons x Nil) = x
+lastList (Cons x xs@(Cons _ _)) = lastList xs
 
--- safeHead Nil = error "haskell detects that this is never reached"
--- since Nil constructor always gives a List a Empty
-
--- Now though we can't define a function that returns either Nil or Cons, the compiler rejects it
--- silly :: Int -> List Int b
--- silly 0 = Nil
--- silly 1 = Cons 1 Nil
-
--- can however take both and produce a single one
-append :: List a b -> a -> List a NonEmpty
+append :: List n elem -> elem -> List (Add n One) elem
 append Nil item = Cons item Nil
 append (Cons x xs) item = Cons x $ append xs item
 
+{-
 reverseList' :: List a b -> List a NonEmpty -> List a NonEmpty
 reverseList' Nil acc = acc
 reverseList' (Cons x xs) acc = reverseList' xs (Cons x acc)
@@ -96,18 +80,26 @@ concatList (Cons x xs) second@(Cons _ _) = Cons x (concatList xs second)
 -- unconsList (Cons x Nil) = (x, Nil)
 -- unconsList (Cons x (Cons _ _)) = (x, Cons x Nil)
 
+-- todo: implement splitAt N, which splits a list into two lists
+-- one with the first N items and second with the remaining items
+-}
+
 main :: IO ()
 main = do
-  print $ safeHead list
-  print $ safeHead list2
-  print $ safeLast list
+  print list
+  print list2
+  print $ headList list
+  print $ headList list2
+  -- print $ headList Nil -- rejected by compiler
+  print $ lastList list
   print $ append list 1
+  {-
   print $ reverseList list
   print $ mapList (+ 2) list
   print $ foldList (*) 1 list
   print $ safeFold1 (*) list
   --  print $ concatList list list
-  print $ lengthList list
+  print $ lengthList list -}
   where
     list = Cons 5 $ Cons 2 $ Cons 3 Nil
     list2 = singleton 10
