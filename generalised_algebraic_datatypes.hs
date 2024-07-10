@@ -58,7 +58,8 @@ reverseList' (Cons x xs) acc = reverseList' xs (Cons x acc)
 reverseList :: List a b -> List a b
 reverseList Nil = Nil
 reverseList (Cons x xs) = reverseList' xs (Cons x Nil)
--- reverseList (Cons x xs) = reverseList xs  
+
+-- reverseList (Cons x xs) = reverseList xs
 -- is detected as an error as reverseList xs is not guaranteed to be Cons
 
 -- derive functor for list
@@ -74,6 +75,7 @@ mapList _ Nil = Nil
 mapList f (Cons x xs) = Cons (f x) (mapList f xs)
 
 newtype EmptyList a = EmptyList (List a Empty)
+
 newtype NonEmptyList a = NonEmptyList (List a NonEmpty)
 
 -- can't derive functor for EmptyList
@@ -95,7 +97,7 @@ main = do
   print $ safeSum list
   print $ append list 1
   print $ reverseList list
-  print $ mapList (+2) list
+  print $ mapList (+ 2) list
   print $ foldList (*) list 1
   print $ safeFold1 (*) list
   where

@@ -1,13 +1,25 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE TypeFamilies #-}
 
-data Empty
+-- see https://www.parsonsmatt.org/2017/04/26/basic_type_level_programming_in_haskell.html
+-- to understand how functions on types work
 
-data NonEmpty
+-- Emptiness is now a Kind, defining two types that belong to the Emptiness Kind: Empty and NonEmpty
+data Emptiness = Empty | NonEmpty
+
+-- type function: a function on all types with Kind of Emptiness, that maps to a type of Kind Emptiness
+-- intended for combining Empty and NonEmpty lists, which results in a non empty List
+type family Combine (emptyStatus1 :: Emptiness) (emptyStatus2 :: Emptiness) where
+  Combine 'Empty 'Empty = 'Empty
+  Combine 'Empty 'NonEmpty = 'NonEmpty
+  Combine 'NonEmpty 'Empty = 'NonEmpty
+  Combine 'NonEmpty 'NonEmpty = 'NonEmpty
 
 -- the second type y is either Empty or NonEmpty, we can use this to control what types a function accepts
-data List x y where
-  Nil :: List a Empty
-  Cons :: a -> List a b -> List a NonEmpty
+data List x (emptiness :: Emptiness) where
+  Nil :: List a 'Empty -- here we use 'Empty as a type
+  Cons :: a -> List a b -> List a 'NonEmpty
 
 instance (Show a) => Show (List a b) where
   show :: List a b -> String
@@ -45,7 +57,8 @@ reverseList' (Cons x xs) acc = reverseList' xs (Cons x acc)
 reverseList :: List a b -> List a b
 reverseList Nil = Nil
 reverseList (Cons x xs) = reverseList' xs (Cons x Nil)
--- reverseList (Cons x xs) = reverseList xs  
+
+-- reverseList (Cons x xs) = reverseList xs
 -- is detected as an error as reverseList xs is not guaranteed to be Cons
 
 -- derive functor for list
@@ -64,25 +77,16 @@ mapList :: (a -> c) -> List a b -> List c b
 mapList _ Nil = Nil
 mapList f (Cons x xs) = Cons (f x) (mapList f xs)
 
--- Concating seems very difficult: how to prove that combining empty with NonEmpty list is NonEmpty?
---concatList :: List a b -> List a c -> List a b
---concatList Nil Nil = Nil
---concatList Nil second = second
---concatList (Cons x xs) second = 
-
-concatListEN :: List a Empty -> List a NonEmpty -> List a NonEmpty
-concatListEN _ = id
-
-concatListNE :: List a NonEmpty -> List a Empty -> List a NonEmpty
-concatListNE nonempty _ = nonempty
-
-concatList :: List a b -> List a b -> List a b
-concatList Nil Nil = Nil
-concatList (Cons x Nil) second = Cons x second
-concatList (Cons x xs@(Cons _ _)) second = Cons x $ concatList xs second
-
 lengthList :: List a b -> Int
 lengthList = foldList (\acc x -> acc + 1) 0
+
+-- Concating is difficult
+-- We use the Combine type function to prove that combining empty with NonEmpty list is NonEmpty
+concatList :: List a b -> List a c -> List a (Combine b c)
+concatList Nil Nil = Nil
+concatList Nil xs@(Cons _ _) = xs
+concatList xs@(Cons _ _) Nil = xs
+concatList (Cons x xs) second@(Cons _ _) = Cons x (concatList xs second)
 
 -- this one also give errors when trying to implement
 -- maybe need full dependent types to work
@@ -97,11 +101,10 @@ main = do
   print $ safeLast list
   print $ append list 1
   print $ reverseList list
-  print $ mapList (+2) list
+  print $ mapList (+ 2) list
   print $ foldList (*) 1 list
   print $ safeFold1 (*) list
-  print $ concatList list list
-  print $ concatListNE list Nil
+  --  print $ concatList list list
   print $ lengthList list
   where
     list = Cons 5 $ Cons 2 $ Cons 3 Nil
