@@ -61,6 +61,11 @@ reverseList (Cons x xs) = reverseList' xs (Cons x Nil)
 -- reverseList (Cons x xs) = reverseList xs  
 -- is detected as an error as reverseList xs is not guaranteed to be Cons
 
+-- todo: how to derive functor for list?
+mapList :: (a -> c) -> List a b -> List c b
+mapList _ Nil = Nil
+mapList f (Cons x xs) = Cons (f x) (mapList f xs)
+
 main :: IO ()
 main = do
   print $ intp (Con 1)
@@ -74,5 +79,6 @@ main = do
   print $ safeSum list
   print $ append list 1
   print $ reverseList list
+  print $ mapList (+2) list
   where
     list = Cons 5 $ Cons 2 $ Cons 3 Nil
