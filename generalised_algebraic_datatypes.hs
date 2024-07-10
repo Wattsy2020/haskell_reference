@@ -61,10 +61,26 @@ reverseList (Cons x xs) = reverseList' xs (Cons x Nil)
 -- reverseList (Cons x xs) = reverseList xs  
 -- is detected as an error as reverseList xs is not guaranteed to be Cons
 
--- todo: how to derive functor for list?
+-- derive functor for list
+foldList :: (acc -> elem -> acc) -> List elem emptyNess -> acc -> acc
+foldList _ Nil acc = acc
+foldList f (Cons x xs) acc = foldList f xs $ f acc x
+
+safeFold1 :: (a -> a -> a) -> List a NonEmpty -> a
+safeFold1 f (Cons x xs) = foldList f xs x
+
 mapList :: (a -> c) -> List a b -> List c b
 mapList _ Nil = Nil
 mapList f (Cons x xs) = Cons (f x) (mapList f xs)
+
+newtype EmptyList a = EmptyList (List a Empty)
+newtype NonEmptyList a = NonEmptyList (List a NonEmpty)
+
+-- can't derive functor for EmptyList
+-- also there's annoying type constructions needed for non empty lists to work
+instance Functor NonEmptyList where
+  fmap :: (a -> b) -> NonEmptyList a -> NonEmptyList b
+  fmap f (NonEmptyList list) = NonEmptyList $ mapList f list
 
 main :: IO ()
 main = do
@@ -80,5 +96,7 @@ main = do
   print $ append list 1
   print $ reverseList list
   print $ mapList (+2) list
+  print $ foldList (*) list 1
+  print $ safeFold1 (*) list
   where
     list = Cons 5 $ Cons 2 $ Cons 3 Nil
