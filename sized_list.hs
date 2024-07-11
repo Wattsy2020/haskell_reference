@@ -10,6 +10,16 @@ type family Add (num1 :: Natural) (num2 :: Natural) where
     Add Zero x2 = x2
     Add (Succ x1) x2 = Succ (Add x1 x2)
 
+-- create a type whose values map one to one with each Natural Type
+-- see: https://web.archive.org/web/20151222163407/https://www.fpcomplete.com/user/konn/prove-your-haskell-for-great-safety/dependent-types-in-haskell
+data SNat (n :: Natural) where
+  SZero :: SNat 'Zero
+  SSucc :: SNat n -> SNat ('Succ n)
+
+toInt :: SNat n -> Int
+toInt SZero = 0
+toInt (SSucc x) = 1 + toInt x
+
 data List (size :: Natural) elem where
     Nil :: List 'Zero elem
     Cons :: elem -> List n elem -> List ('Succ n) elem
@@ -66,10 +76,6 @@ mapList :: (a -> b) -> List n a -> List n b
 mapList _ Nil = Nil
 mapList f (Cons x xs) = Cons (f x) (mapList f xs)
 
--- todo: see if we can get the length in constant time using KnowNat
-lengthList :: List n b -> Int
-lengthList = foldList (\acc x -> acc + 1) 0
-
 {-
 Also tricky: doesn't recognise commutation
 concatList :: List n elem -> List m elem -> List (Add n m) elem
@@ -103,6 +109,17 @@ filterList f (Cons x xs)
   | otherwise = filterList f xs
 -}
 
+replicateList :: SNat n -> elem -> List n elem
+replicateList SZero _ = Nil
+replicateList (SSucc n) a = Cons a (replicateList n a)
+
+lengthList' :: List n b -> SNat n
+lengthList' Nil = SZero
+lengthList' (Cons _ xs) = SSucc $ lengthList' xs
+
+lengthList :: List n b -> Int
+lengthList = toInt . lengthList'
+
 main :: IO ()
 main = do
   print list
@@ -119,6 +136,7 @@ main = do
   print $ lengthList list
   print $ unconsList list
   print $ unconsList list2
+  print $ replicateList (SSucc (SSucc SZero)) 2
   where
     list = Cons 5 $ Cons 2 $ Cons 3 Nil
     list2 = singleton 10
