@@ -94,6 +94,15 @@ unsnocList (Cons x xs) = unsnocList' xs Nil x
 -- todo: implement splitAt N, which splits a list into two lists
 -- one with the first N items and second with the remaining items
 
+{- This also can't be implemented, since we don't know the size of the result list
+   We need something like "AnyNat"
+filterList :: (elem -> Bool) -> List n elem -> List m elem
+filterList _ Nil = Nil
+filterList f (Cons x xs)
+  | f x = Cons x $ filterList f xs
+  | otherwise = filterList f xs
+-}
+
 main :: IO ()
 main = do
   print list
