@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# OPTIONS_GHC -Wall #-}
 
 -- see https://www.parsonsmatt.org/2017/04/26/basic_type_level_programming_in_haskell.html
 -- to understand how functions on types work
@@ -45,11 +46,11 @@ singleton :: elem -> List NonEmpty elem
 singleton x = Cons x Nil
 
 safeHead :: List NonEmpty elem -> elem
-safeHead (Cons x xs) = x
+safeHead (Cons x _) = x
 
 safeLast :: List NonEmpty elem -> elem
 safeLast (Cons x Nil) = x
-safeLast (Cons x xs@(Cons _ _)) = safeLast xs
+safeLast (Cons _ xs@(Cons _ _)) = safeLast xs
 
 -- safeHead Nil = error "haskell detects that this is never reached"
 -- since Nil constructor always gives a List a Empty
@@ -92,7 +93,7 @@ mapList _ Nil = Nil
 mapList f (Cons x xs) = Cons (f x) (mapList f xs)
 
 lengthList :: List e elem -> Int
-lengthList = foldList (\acc x -> acc + 1) 0
+lengthList = foldList (\acc _ -> acc + 1) 0
 
 -- Concating is difficult
 -- We use the Combine type function to prove that combining empty with NonEmpty list is NonEmpty
@@ -131,5 +132,5 @@ main = do
   print $ Cons (+1) (Cons (+2) Nil) <*> list
   print $ list >>= (\elem -> Cons elem (Cons 0 Nil))
   where
-    list = Cons 5 $ Cons 2 $ Cons 3 Nil
-    list2 = singleton 10
+    list :: List NonEmpty Int = Cons 5 $ Cons 2 $ Cons 3 Nil
+    list2 :: List NonEmpty Int = singleton 10
