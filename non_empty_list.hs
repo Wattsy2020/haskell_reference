@@ -2,6 +2,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 -- see https://www.parsonsmatt.org/2017/04/26/basic_type_level_programming_in_haskell.html
 -- to understand how functions on types work
@@ -130,7 +131,7 @@ main = do
   print $ lengthList list
   print $ Cons (+1) Nil <*> (pure 1 :: List NonEmpty Int)
   print $ Cons (+1) (Cons (+2) Nil) <*> list
-  print $ list >>= (\elem -> Cons elem (Cons 0 Nil))
+  print $ list >>= (\element -> Cons element (Cons 0 Nil))
   where
     list :: List NonEmpty Int = Cons 5 $ Cons 2 $ Cons 3 Nil
     list2 :: List NonEmpty Int = singleton 10
