@@ -2,13 +2,16 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 
+module SizedList where
+
 data Natural = Zero | Succ Natural
+
 type One = Succ Zero
 
 type family Add (num1 :: Natural) (num2 :: Natural) where
-    Add x1 Zero = x1
-    Add Zero x2 = x2
-    Add (Succ x1) x2 = Succ (Add x1 x2)
+  Add x1 Zero = x1
+  Add Zero x2 = x2
+  Add (Succ x1) x2 = Succ (Add x1 x2)
 
 -- create a type whose values map one to one with each Natural Type
 -- see: https://web.archive.org/web/20151222163407/https://www.fpcomplete.com/user/konn/prove-your-haskell-for-great-safety/dependent-types-in-haskell
@@ -21,8 +24,8 @@ toInt SZero = 0
 toInt (SSucc x) = 1 + toInt x
 
 data List (size :: Natural) elem where
-    Nil :: List 'Zero elem
-    Cons :: elem -> List n elem -> List ('Succ n) elem
+  Nil :: List 'Zero elem
+  Cons :: elem -> List n elem -> List ('Succ n) elem
 
 instance (Show elem) => Show (List n elem) where
   show :: List n elem -> String
@@ -50,8 +53,8 @@ append (Cons x xs) item = Cons x $ append xs item
 {-
 -- encoding that (Cons x xs) gives a list xs with length N - 1 is tricky
 -- also this isn't recognising that n + m++ == n++ + m
--- we might instead need to use KnownNat from 
--- https://hackage.haskell.org/package/base-4.20.0.1/docs/GHC-TypeLits.html 
+-- we might instead need to use KnownNat from
+-- https://hackage.haskell.org/package/base-4.20.0.1/docs/GHC-TypeLits.html
 reverseList' :: List n elem -> List m elem -> List (Add n m) elem
 reverseList' Nil acc = acc
 reverseList' (Cons x xs) acc = reverseList' xs (Cons x acc)
@@ -130,7 +133,7 @@ main = do
   print $ lastList list
   print $ append list 1
   print $ mapList (+ 2) list
-  print $ fmap (*2) list
+  print $ fmap (* 2) list
   print $ foldList (*) 1 list
   print $ safeFold1 (*) list
   print $ lengthList list

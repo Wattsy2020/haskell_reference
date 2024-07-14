@@ -1,4 +1,4 @@
--- import Data.List
+module List where
 
 import Data.Char (isSpace)
 import Data.Function (on)

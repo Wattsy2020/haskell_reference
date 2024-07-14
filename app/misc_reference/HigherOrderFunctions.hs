@@ -1,3 +1,5 @@
+module HigherOrderFunctions where
+
 import Data.Foldable (minimumBy)
 import Data.Function (on)
 
@@ -37,7 +39,7 @@ zipWith' f (x : xs) (y : ys) = f x y : zipWith' f xs ys
 --  main = print (zipWith' (+) [1,2,3] [4, 5, 6])
 
 dotProd :: (Num a) => [a] -> [a] -> a
-dotProd xs ys = sum (zipWith (*) xs ys)
+dotProd xs ys = sum $ zipWith' (*) xs ys
 
 -- main = print (dotProd [1, 2, 3] [4, 5, 6])
 
@@ -176,4 +178,4 @@ scanr' accFunc acc (x : xs) = accFunc x right_acc : right_accs
 
 testList = [1, 2, 3, 4]
 
-main = print (foldr' (+) 0 testList, scanr' (+) 0 testList)
+-- main = print (foldr' (+) 0 testList, scanr' (+) 0 testList)

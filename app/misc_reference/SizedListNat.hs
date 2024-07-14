@@ -2,11 +2,13 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE TypeFamilies #-}
 
+module SizedListNat where
+
 import GHC.TypeLits
 
 data List (size :: Natural) elem where
-    Nil :: List 0 elem
-    Cons :: elem -> List n elem -> List (n + 1) elem
+  Nil :: List 0 elem
+  Cons :: elem -> List n elem -> List (n + 1) elem
 
 instance (Show elem) => Show (List n elem) where
   show :: List n elem -> String
@@ -43,8 +45,8 @@ reverseList (Cons x xs) = reverseList' xs (Cons x Nil)
 -}
 
 -- no idea how to get the length from the type
---lengthList :: KnownNat n => List n elem -> Integer
---lengthList = natVal
+-- lengthList :: KnownNat n => List n elem -> Integer
+-- lengthList = natVal
 
 main :: IO ()
 main = do

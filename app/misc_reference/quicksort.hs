@@ -1,3 +1,5 @@
+module Quicksort where
+
 quicksort :: (Ord a) => [a] -> [a]
 quicksort [] = []
 quicksort (pivot : xs) = quicksort smaller ++ [pivot] ++ quicksort larger

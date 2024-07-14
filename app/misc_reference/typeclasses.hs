@@ -1,7 +1,8 @@
 {-# LANGUAGE DefaultSignatures #-}
 {-# LANGUAGE DeriveAnyClass #-}
 
-import Data.Function (on)
+module TypeClasses where
+
 import Data.List qualified as List
 import Data.Set qualified as Set
 
@@ -73,7 +74,7 @@ instance Num Ring where
   negate x = succ $ negate (succ' x)
 
   (*) :: Ring -> Ring -> Ring
-  (*) r1 Zero = Zero
+  (*) _ Zero = Zero
   (*) r1 r2 = r1 + (r1 * pred r2)
 
   abs :: Ring -> Ring
@@ -86,6 +87,7 @@ instance Num Ring where
   fromInteger 0 = Zero
   fromInteger x = succ' $ fromInteger (x - 1)
 
+main :: IO ()
 main = do
   print (succ' Two, succ' Five, pred' Zero)
   print (One + One, Four + Four, Five + 2)

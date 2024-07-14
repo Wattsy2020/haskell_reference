@@ -4,6 +4,8 @@
 {-# OPTIONS_GHC -Wall #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
+module NonEmptyList where
+
 -- see https://www.parsonsmatt.org/2017/04/26/basic_type_level_programming_in_haskell.html
 -- to understand how functions on types work
 
@@ -41,7 +43,7 @@ instance Applicative (List NonEmpty) where
 
 instance Monad (List NonEmpty) where
   (>>=) :: List 'NonEmpty a -> (a -> List 'NonEmpty b) -> List 'NonEmpty b
-  (>>=) list f = flattenList $ fmap f list 
+  (>>=) list f = flattenList $ fmap f list
 
 singleton :: elem -> List NonEmpty elem
 singleton x = Cons x Nil
@@ -72,7 +74,7 @@ reverseList' (Cons x xs) acc = reverseList' xs (Cons x acc)
 
 -- can also preserve the type of b
 reverseList :: List e elem -> List e elem
-reverseList xs = reverseList' xs Nil 
+reverseList xs = reverseList' xs Nil
 
 -- reverseList (Cons x xs) = reverseList xs
 -- is detected as an error as reverseList xs is not guaranteed to be Cons
@@ -129,8 +131,8 @@ main = do
   print $ safeFold1 (*) list
   print $ concatList list $ reverseList list
   print $ lengthList list
-  print $ Cons (+1) Nil <*> (pure 1 :: List NonEmpty Int)
-  print $ Cons (+1) (Cons (+2) Nil) <*> list
+  print $ Cons (+ 1) Nil <*> (pure 1 :: List NonEmpty Int)
+  print $ Cons (+ 1) (Cons (+ 2) Nil) <*> list
   print $ list >>= (\element -> Cons element (Cons 0 Nil))
   where
     list :: List NonEmpty Int = Cons 5 $ Cons 2 $ Cons 3 Nil

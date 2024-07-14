@@ -1,3 +1,5 @@
+module Reference where
+
 nums :: [Int] = [1, 2, 3, 4]
 
 squared = map (^ 2) nums

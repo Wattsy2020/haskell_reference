@@ -1,5 +1,7 @@
 {-# LANGUAGE GADTs #-}
 
+module GADTs where
+
 data Exp a where
   Lam :: (Exp s -> Exp t) -> Exp (s -> t)
   App :: Exp (s -> t) -> Exp s -> Exp t

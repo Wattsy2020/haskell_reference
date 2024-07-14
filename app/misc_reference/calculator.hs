@@ -1,3 +1,5 @@
+module Calculator where
+
 -- Implement a reverse polish notation calculator for simple math operations
 data Op = Plus | Minus | Multiply deriving (Show)
 

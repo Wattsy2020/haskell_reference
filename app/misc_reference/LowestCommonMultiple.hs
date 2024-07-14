@@ -1,3 +1,5 @@
+module LowestCommonMultiple where
+
 import Data.Foldable (toList)
 import Data.Sequence qualified as Seq
 

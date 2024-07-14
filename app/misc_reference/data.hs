@@ -1,3 +1,5 @@
+module Data where
+
 import Data.Function (on)
 import Data.List qualified as List
 import Data.Map qualified as Map

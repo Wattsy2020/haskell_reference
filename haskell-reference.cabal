@@ -61,7 +61,20 @@ executable haskell-reference
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    other-modules: Lecture1
+    other-modules: 
+      Lecture1,
+      Calculator,
+      Data,
+      GADTs,
+      HigherOrderFunctions,
+      List,
+      LowestCommonMultiple,
+      NonEmptyList,
+      Quicksort,
+      Reference,
+      SizedListNat,
+      SizedList,
+      TypeClasses
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -69,10 +82,14 @@ executable haskell-reference
     -- Other library packages from which modules are imported.
     build-depends:
       base ^>=4.17.2.1,
-      codeworld-api ^>= 0.8.1
+      codeworld-api ^>= 0.8.1,
+      containers ^>= 0.6
 
     -- Directories containing source files.
-    hs-source-dirs:   app, app/cs194
+    hs-source-dirs:   
+      app
+      app/cs194
+      app/misc_reference
 
     -- Base language which the package is written in.
     default-language: GHC2021
