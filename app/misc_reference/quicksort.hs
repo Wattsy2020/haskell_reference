@@ -13,4 +13,5 @@ quicksort (pivot : xs) = quicksort smaller ++ [pivot] ++ quicksort larger
 largeNums = [0, 1 .. 10000]
 
 -- largeNums = [10000, 9999..0] does particularly badly, as this is the worst case for quicksort
+main :: IO ()
 main = print (take 10 largeNums, take 10 (quicksort largeNums))

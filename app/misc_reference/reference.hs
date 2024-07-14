@@ -57,4 +57,4 @@ twice func = func . func
 
 addFour = (twice . twice) addOne
 
--- main = print (addFour nums)
+main = print (addFour nums)

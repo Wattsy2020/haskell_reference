@@ -1,7 +1,6 @@
 module HigherOrderFunctions where
 
 import Data.Foldable (minimumBy)
-import Data.Function (on)
 
 all' :: [Bool] -> Bool
 all' [] = True -- vaccuous truth
@@ -43,11 +42,13 @@ dotProd xs ys = sum $ zipWith' (*) xs ys
 
 -- main = print (dotProd [1, 2, 3] [4, 5, 6])
 
+largest :: Integer
 largest = head (filter (\x -> x `mod` 3829 == 0) [100000, 99999 .. 1])
 
 -- main = print largest
 
-squareSum = sum (filter odd (takeWhile (< 10000) [x ^ 2 | x <- [1 ..]]))
+squareSum :: Integer
+squareSum = sum (filter odd (takeWhile (< 10000) [x ^ (2 :: Integer) | x <- [1 ..]]))
 
 -- main = print squareSum
 
@@ -78,6 +79,7 @@ takeWhile1 f (x : xs)
 collatzLength :: Int -> Int
 collatzLength x = length (takeWhile (1 /=) (collatzChain x))
 
+numLongCollatz :: Int
 numLongCollatz = length (filter (> 15) (map collatzLength [1 .. 100]))
 
 -- main = print numLongCollatz
@@ -118,14 +120,17 @@ scanl' f acc (x : xs) = new_acc : scanl' f new_acc xs
 
 -- scanl1 just uses the first element in the list as the starting accumlulator arg
 scanl1' :: (a -> a -> a) -> [a] -> [a]
+scanl1' _ [] = error "expected a non empty list"
 scanl1' f (x : xs) = scanl' f x xs
 
 -- can use the $ to lower the priority and evaluate the right arguments first
 -- main = print $ scanl1' (+) [1 .. 10]
 
 -- how many square roots of the natural numbers does it take to get for their sum to be over 1000
+cumulativeSumSqrts :: [Double]
 cumulativeSumSqrts = scanl1 (+) (map sqrt [1 ..])
 
+answer :: Int
 answer = length (takeWhile (< 1000) cumulativeSumSqrts)
 
 -- main = print answer
@@ -143,6 +148,7 @@ elem3 item = foldl' (\acc x -> acc || (item == x)) False
 
 -- foldl1 uses the first element in the list to start the accumulation
 foldl1' :: (a -> a -> a) -> [a] -> a
+foldl1' _ [] = error "expected a non empty list"
 foldl1' accFunc (x : xs) = foldl' accFunc x xs
 
 product' :: (Num a) => [a] -> a
@@ -172,10 +178,13 @@ foldr' accFunc acc (x : xs) = accFunc x (foldr accFunc acc xs)
 
 scanr' :: (a -> b -> b) -> b -> [a] -> [b]
 scanr' _ acc [] = [acc]
-scanr' accFunc acc (x : xs) = accFunc x right_acc : right_accs
-  where
-    right_accs@(right_acc : _) = scanr' accFunc acc xs
+scanr' accFunc acc (x : xs) = case scanr' accFunc acc xs of
+  right_accs@(right_acc : _) -> accFunc x right_acc : right_accs
+  [] -> error "shouldn't be possible since we always add an acc and return a non empty list"
 
-testList = [1, 2, 3, 4]
-
--- main = print (foldr' (+) 0 testList, scanr' (+) 0 testList)
+main :: IO ()
+main = do
+  print $ foldr' (+) 0 testList
+  print $ scanr' (+) 0 testList
+  where 
+    (testList :: [Int]) = [1, 2, 3, 4]
