@@ -1,6 +1,6 @@
 module Main where
 
-import Homework1
+import Sokoban
 
 main :: IO ()
-main = homework1Main
+main = playSokoban
