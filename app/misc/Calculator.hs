@@ -19,16 +19,28 @@ opToFunc Plus = (+)
 opToFunc Minus = (-)
 opToFunc Multiply = (*)
 
-evalToken :: (Num a) => [a] -> Token a -> [a]
-evalToken stack (Number num) = num : stack
-evalToken (first : second : stack) (Operator op) = opToFunc op second first : stack
+evalToken :: (Num a) => Token a -> [a] -> Either String [a]
+evalToken (Operator _) [] = Left "can't evaluate an operator on no arguments"
+evalToken (Operator _) [_] = Left "can't evaluate an operator on one argument"
+evalToken (Number num) [] = Right [num]
+evalToken (Number num) stack = Right $ num : stack
+evalToken (Operator op) (first : second : stack) = Right $ opToFunc op second first : stack
 
-evalExpression :: (Num a) => [Token a] -> a
-evalExpression (Number num : tokens) = head $ foldl evalToken [num] tokens
+evalExpr2 :: (Num a) => [Token a] -> Either String [a]
+evalExpr2 = foldl (\stack newToken -> stack >>= evalToken newToken) (Right [])
 
-evalExpr :: (Num a, Read a) => String -> a
+evalExpression :: (Num a) => [Token a] -> Either String a
+evalExpression tokens = 
+  case foldl (\stack newToken -> stack >>= evalToken newToken) (Right []) tokens of
+    Left errorStr -> Left errorStr
+    Right [] -> Left "no tokens to evaluate"
+    Right (result : _) -> Right result
+
+evalExpr :: (Num a, Read a) => String -> Either String a
 evalExpr = evalExpression . parseExpression
 
+main :: IO ()
 main = do
-  print $ evalExpr "10 4 3 + 2 * -"
-  print $ evalExpr "90 34 12 33 55 66 + * - + -"
+  print (evalExpr "10 4 3 + 2 * -" :: Either String Double)
+  print (evalExpr "90 34 12 33 55 66 + * - + -" :: Either String Double)
+  print (evalExpr "10 + 2" :: Either String Double) -- will show the error

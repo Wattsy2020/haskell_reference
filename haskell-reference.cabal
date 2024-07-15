@@ -88,8 +88,8 @@ executable haskell-reference
 
     -- Directories containing source files.
     hs-source-dirs:   
-      app
-      app/cs194
+      app,
+      app/cs194,
       app/misc
 
     -- Base language which the package is written in.
