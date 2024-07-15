@@ -1,8 +1,10 @@
 module Reference where
 
-nums :: [Int] = [1, 2, 3, 4]
+nums :: [Int]
+nums = [1, 2, 3, 4]
 
-squared = map (^ 2) nums
+squared :: [Int]
+squared = map (^ (2 :: Int)) nums
 
 factorial :: Int -> Int
 factorial n
@@ -47,6 +49,7 @@ filterFunc :: (Integral a) => [a] -> [a]
 filterFunc = filter even
 
 -- (func1 . func2) creates a new function, need to wrap in brackets to apply it
+result :: [Int]
 result = (addOne . filterFunc) nums
 
 -- main = print result
@@ -55,6 +58,8 @@ result = (addOne . filterFunc) nums
 twice :: (a -> a) -> (a -> a)
 twice func = func . func
 
+addFour :: (Integral a) => [a] -> [a]
 addFour = (twice . twice) addOne
 
+main :: IO ()
 main = print (addFour nums)
