@@ -65,6 +65,8 @@ executable haskell-reference
       Lecture1,
       Homework1,
       Sokoban,
+      Assets,
+      Board,
       Calculator,
       Data,
       GADTs,
@@ -91,6 +93,7 @@ executable haskell-reference
     hs-source-dirs:   
       app,
       app/cs194,
+      app/cs194/Sokoban,
       app/misc
 
     -- Base language which the package is written in.
