@@ -1,7 +1,7 @@
 module Sokoban where
 
 import CodeWorld
-import Board
+import Interaction
 
 playSokoban :: IO ()
-playSokoban = drawingOf board
+playSokoban = activityOf initialState handleEvent drawWorld

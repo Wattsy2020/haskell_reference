@@ -33,7 +33,3 @@ addMazeBlock currentMaze coordinate =
 -- A picture of the full maze
 mazePicture :: Picture
 mazePicture = foldl addMazeBlock blank $ concat grid
-
--- The game board
-board :: Picture
-board = scaled 0.2 0.2 mazePicture
