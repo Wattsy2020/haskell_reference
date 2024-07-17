@@ -35,8 +35,8 @@ tree n angle = polyline [(0,0),(0,1)] & translated 0 1 (
 
 treeFolding :: Integer -> Double -> Picture
 treeFolding depth time = 
-    let normalisedTime = time - truncateDouble time in 
-    let angleMultipler = abs (normalisedTime - 0.5) / 0.5 in
+    let normalisedTime = time - truncateDouble time
+        angleMultipler = abs (normalisedTime - 0.5) / 0.5 in
         tree depth (pi * angleMultipler / 10)
 
 scaleAnimationTime :: Double -> (Double -> Picture) -> (Double -> Picture)
