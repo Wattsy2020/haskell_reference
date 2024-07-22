@@ -1,8 +1,19 @@
-module Assets (Block (..), wall, ground, storage, box, toPicture) where 
+module Assets (
+    wall, 
+    ground, 
+    storage, 
+    box, 
+    playerLeft,
+    playerRight,
+    playerUp,
+    playerDown) where 
 
 import CodeWorld
 
-data Block = Wall | Ground | Storage | Box
+solidThickRectangle :: Color -> Color -> Double -> Double -> Double -> Picture
+solidThickRectangle borderColor fillColor borderWidth width height = 
+    colored borderColor (thickRectangle borderWidth width height)
+    & colored fillColor (solidRectangle width height)
 
 -- A picture of half a brick
 halfBrick :: Picture
@@ -42,9 +53,33 @@ storage = colored (light red) (solidCircle 1) & ground
 box :: Picture
 box = colored (light brown) $ solidRectangle 3.5 3.5
 
--- Get the picture for the given block type
-toPicture :: Block -> Picture
-toPicture Wall = wall
-toPicture Ground = ground
-toPicture Storage = storage
-toPicture Box = box
+-- Returns a picture of a rectangular body part given width and height
+bodyPart :: Double -> Double -> Picture
+bodyPart = solidThickRectangle black (light pink) 0.1
+
+-- A picture of the player facing left
+playerLeft :: Picture
+playerLeft = head' & leftArm & rightArm & torso & leftLeg & rightLeg
+    where
+        leg = bodyPart 0.4 1.5
+        leftLeg = translated (-0.6) (-1) $ rotated (- (pi / 10)) leg
+        rightLeg = translated 0.6 (-1) $ rotated (pi / 10) leg
+        arm = bodyPart 0.3 1.2
+        leftArm = translated (-0.7) 0.2 $ rotated (- (pi / 3)) arm
+        rightArm = translated 0.6 0 $ rotated (pi / 10) arm
+        torso = bodyPart 0.8 1
+        head' = translated 0 0.9 $ bodyPart 0.5 0.5
+
+playerRight :: Picture
+playerRight = reflected (pi/2) playerLeft
+
+playerUp :: Picture 
+playerUp = head' & shoulders & leftArm & rightArm
+    where 
+        head' = bodyPart 0.6 0.7
+        shoulders = bodyPart 1.5 0.6
+        leftArm = translated (-0.7) 0.6 $ rotated (pi/10) $ bodyPart 0.4 0.6
+        rightArm = translated 0.7 0.4 $ rotated (-(pi/10)) $ bodyPart 0.4 0.2
+
+playerDown :: Picture
+playerDown = rotated pi playerDown

@@ -2,6 +2,7 @@ module Sokoban where
 
 import CodeWorld
 import Interaction
+import Board
 
 playSokoban :: IO ()
-playSokoban = activityOf initialState handleEvent drawWorld
+playSokoban = drawingOf $ drawMaze maze -- activityOf initialState handleEvent drawWorld

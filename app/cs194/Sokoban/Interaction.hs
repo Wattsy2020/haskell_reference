@@ -7,8 +7,6 @@ import CodeWorld
 import Data.Text
 import Prelude hiding (Left, Right)
 
-data Direction = Up | Down | Left | Right
-
 readMaybe :: Text -> Maybe Direction
 readMaybe "Up" = Just Up
 readMaybe "Down" = Just Down
@@ -29,7 +27,8 @@ handleEvent (KeyPress key) coordinate = case readMaybe key of
 handleEvent _ coordinate = coordinate
 
 drawWorld :: Coordinate -> Picture
-drawWorld coordinate = scaled 0.2 0.2 $ translateBlock coordinate mazePicture
+drawWorld _ = blank -- todo
+--drawWorld coordinate = scaled 0.2 0.2 $ translateBlock coordinate mazePicture
 
 initialState :: Coordinate
 initialState = Coordinate 0 0
