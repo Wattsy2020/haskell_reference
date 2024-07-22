@@ -27,7 +27,7 @@ getTile (Coordinate col row) grid = grid Vec.!? row >>= (Vec.!? col)
 
 movePlayer :: Direction -> Maze -> Maze
 movePlayer direction maze'@(Maze grid player) = 
-  let targetCoordinate = trace "target coordinate" $ adjacentCoordinate direction (location player)
+  let targetCoordinate = adjacentCoordinate direction (location player)
       newMaze = maze' { player = Player targetCoordinate direction } in
   case getTile targetCoordinate grid of
     Just (Tile Ground Nothing) -> newMaze
@@ -36,6 +36,7 @@ movePlayer direction maze'@(Maze grid player) =
     _ -> Maze grid (player { direction = direction })
 
 handleEvent :: Event -> Maze -> Maze
+handleEvent (KeyPress "Esc") = const maze
 handleEvent (KeyPress key) = maybe id movePlayer (readMaybe key)
 handleEvent _ = id
 
