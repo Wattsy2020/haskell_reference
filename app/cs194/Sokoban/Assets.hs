@@ -82,4 +82,4 @@ playerUp = head' & shoulders & leftArm & rightArm
         rightArm = translated 0.7 0.4 $ rotated (-(pi/10)) $ bodyPart 0.4 0.2
 
 playerDown :: Picture
-playerDown = rotated pi playerDown
+playerDown = rotated pi playerUp
