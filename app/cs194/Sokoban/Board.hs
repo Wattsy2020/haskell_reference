@@ -79,9 +79,13 @@ mazeTile :: Coordinate -> Maybe Tile
 mazeTile (Coordinate x y)
   | abs x > 4  || abs y > 4  = Nothing
   | abs x == 4 || abs y == 4 = Just $ Tile Wall Nothing
-  | x ==  2 && y <= 0        = Just $ Tile Wall Nothing
-  | x ==  3 && y <= 0        = Just $ Tile Storage Nothing
-  | x >= -2 && y == 0        = Just $ Tile Ground (Just Box)
+  | y == -2                  = Just $ Tile Storage (Just Box)
+  | x /= 0 && y == 1         = Just $ Tile Wall Nothing
+  | x == 0 && y == 1         = Just $ Tile Ground (Just Box)
+  | x == -3 && y == 2        = Just $ Tile Wall Nothing
+  | x == -2 && y == 2        = Just $ Tile Storage Nothing
+  | x == -1 && y == 2        = Just $ Tile Ground (Just Box)
+  | x == 1 && y == 3         = Just $ Tile Storage Nothing
   | otherwise                = Just $ Tile Ground Nothing
 
 makeRow :: Int -> Vec.Vector Tile
