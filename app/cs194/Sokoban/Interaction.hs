@@ -45,15 +45,14 @@ updateCoordinate coord@(Coordinate col row) tile (Maze grid player)
 -- fails if the coordinate cannot be replaced or is outside the maze
 placeBox :: Coordinate -> Maze -> Maybe Maze
 placeBox coordinate maze'@(Maze grid _) = case getTile coordinate grid of
-    Just (Tile Ground Nothing) -> updateCoordinate coordinate (Tile Ground (Just Box)) maze'
-    Just (Tile Storage Nothing) -> updateCoordinate coordinate (Tile Storage (Just Box)) maze'
+    Just (EnterableTile blockType Nothing) -> updateCoordinate coordinate (EnterableTile blockType (Just Box)) maze'
     _ -> Nothing
 
 -- Try to remove a box in a coordinate
 -- fails if the coordinate does not have a box, is outside the maze
 removeBox :: Coordinate -> Maze -> Maybe Maze
 removeBox coordinate maze'@(Maze grid _) = case getTile coordinate grid of
-    Just (Tile blockType (Just Box)) -> updateCoordinate coordinate (Tile blockType Nothing) maze'
+    Just (EnterableTile blockType (Just Box)) -> updateCoordinate coordinate (EnterableTile blockType Nothing) maze'
     _ -> Nothing
 
 tryMoveBox :: Direction -> Coordinate -> Maze -> Maybe Maze
@@ -64,12 +63,15 @@ tryMoveBox direction coordinate =
 movePlayer :: Direction -> Maze -> Maze
 movePlayer direction maze'@(Maze grid player) =
   let targetCoordinate = adjacentCoordinate direction (location player)
-      newMaze = maze' { player = Player targetCoordinate direction }
+      newPlayer = Player targetCoordinate direction
       unmovedMaze = Maze grid (player { direction = direction }) in
   case getTile targetCoordinate grid of
-    Just (Tile Ground Nothing) -> newMaze
-    Just (Tile Storage Nothing) -> newMaze
-    Just (Tile _ (Just Box)) -> maybe unmovedMaze (\maze1 -> maze1 { player = Player targetCoordinate direction }) (tryMoveBox direction targetCoordinate maze')
+    Just (EnterableTile _ Nothing) -> maze' { player = newPlayer }
+    Just (EnterableTile _ (Just Box)) -> 
+        maybe 
+        unmovedMaze 
+        (\maze1 -> maze1 { player = newPlayer }) 
+        (tryMoveBox direction targetCoordinate maze')
     _ -> unmovedMaze
 
 handleEvent :: Event -> Maze -> Maze
@@ -99,6 +101,7 @@ startableActivityOf initialStateF handleEventF drawWorldF = activityOf Starting 
 -- and define a new function that produces an interaction of a winnable game, 
 -- showing a game over screen when a condition is met
 -- then we want gameLoop = resetable ( winnable ( startable ( baseInteraction )))
+-- also split this into two modules: BoardManipulation (with MovePlayer and all dependencies) and Interaction
 
 gameLoop :: IO ()
 gameLoop = startableActivityOf maze handleEvent drawWorld
