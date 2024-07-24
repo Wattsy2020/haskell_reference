@@ -13,6 +13,7 @@ module Board (
 ) where
 
 import Data.Vector qualified as Vec
+import VectorUtils qualified as Vec
 import Data.Maybe
 import Prelude hiding (Left, Right)
 
@@ -102,15 +103,12 @@ maze = Maze mazeGrid (Player (Coordinate 1 1) Right)
 drawTile :: Tile -> Picture
 drawTile (Tile base overlay) = maybe blank drawOverlay overlay & drawBase base
 
-drawRow :: Int -> Vec.Vector Tile -> Picture
-drawRow rowNum = Vec.ifoldl fold' blank
-  where
-    fold' :: Picture -> Int -> Tile -> Picture
-    fold' picture colNum tile = picture & translateBlock (Coordinate colNum rowNum) (drawTile tile)
+drawRow :: Int -> Vec.Vector Tile -> Vec.Vector Picture
+drawRow rowNum = Vec.imap (\colNum tile -> translateBlock (Coordinate colNum rowNum) (drawTile tile))
 
 -- Draw the maze grid
 drawGrid :: MazeGrid -> Picture
-drawGrid = Vec.ifoldl (\picture rowNum -> (picture &) . drawRow rowNum) blank
+drawGrid = Vec.foldl (&) blank . Vec.concat' . Vec.imap drawRow
 
 -- Draw the maze
 drawMaze :: Maze -> Picture

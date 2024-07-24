@@ -79,7 +79,8 @@ executable haskell-reference
       Reference,
       SizedListNat,
       SizedList,
-      TypeClasses
+      TypeClasses,
+      VectorUtils,
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

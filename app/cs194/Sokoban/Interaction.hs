@@ -1,13 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Interaction (initialState, handleEvent, drawWorld) where
+module Interaction (gameLoop) where
 
 import Data.Text
 import Data.Vector qualified as Vec
 import Prelude hiding (Left, Right)
+import CodeWorld
 
 import Board
-import CodeWorld
+import Assets (startScreen)
 
 readMaybe :: Text -> Maybe Direction
 readMaybe "Up" = Just Up
@@ -43,5 +44,20 @@ handleEvent _ = id
 drawWorld :: Maze -> Picture
 drawWorld = scaled 0.2 0.2 . translateBlock (Coordinate (-4) (-4)) . drawMaze
 
-initialState :: Maze
-initialState = maze
+data StartableGameState a = Starting | Running a
+
+startableActivityOf :: forall world . world -> (Event -> world -> world) -> (world -> Picture) -> IO ()
+startableActivityOf initialStateF handleEventF drawWorldF = activityOf Starting handleEvent' drawWorld'
+    where
+        handleEvent' :: Event -> StartableGameState world -> StartableGameState world
+        handleEvent' (KeyPress " ") Starting = Running initialStateF
+        handleEvent' _ Starting = Starting
+        handleEvent' event (Running state) = Running $ handleEventF event state
+
+        drawWorld' :: StartableGameState world -> Picture
+        drawWorld' Starting = startScreen
+        drawWorld' (Running world) = drawWorldF world
+
+
+gameLoop :: IO ()
+gameLoop = startableActivityOf maze handleEvent drawWorld

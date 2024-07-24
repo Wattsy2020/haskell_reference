@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Assets (
     wall, 
     ground, 
@@ -6,9 +8,11 @@ module Assets (
     playerLeft,
     playerRight,
     playerUp,
-    playerDown) where 
+    playerDown,
+    startScreen) where 
 
 import CodeWorld
+import Data.Text ()
 
 solidThickRectangle :: Color -> Color -> Double -> Double -> Double -> Picture
 solidThickRectangle borderColor fillColor borderWidth width height = 
@@ -83,3 +87,7 @@ playerUp = head' & shoulders & leftArm & rightArm
 
 playerDown :: Picture
 playerDown = rotated pi playerUp
+
+startScreen :: Picture
+startScreen = scaled 3 3 (lettering "Sokoban!") 
+    & scaled 0.5 0.5 $ translated 0 (-4) $ lettering "Press Space to Start"
