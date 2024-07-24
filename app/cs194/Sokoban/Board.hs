@@ -2,6 +2,7 @@
 module Board (
   Direction(..),
   BaseBlock(..),
+  OverlayBlock(..),
   Coordinate(..),
   Tile(..),
   MazeGrid,
@@ -28,30 +29,33 @@ import Assets
       playerUp,
       playerDown )
 
-data Direction = Up | Down | Left | Right
+data Direction = Up | Down | Left | Right deriving Show
 
-data BaseBlock = Wall | Ground | Storage
+-- todo: divide into Wall | Enterable (Ground | Storage) using GADTs
+-- this could help abstract the (Just Ground) or (Just Storage) pattern matching we do
+data BaseBlock = Wall | Ground | Storage deriving Show
 
-data OverlayBlock = Box
+data OverlayBlock = Box deriving Show
 
-data Coordinate = Coordinate Int Int -- colNum, rowNum
+-- Coordinate storing a colNumber and rowNumber
+data Coordinate = Coordinate Int Int deriving (Show, Eq)
 
 data Tile = Tile {
   baseBlock :: BaseBlock,
   overlayBlock :: Maybe OverlayBlock
-}
+} deriving Show
 
 data Player = Player {
   location :: Coordinate,
   direction :: Direction
-}
+} deriving Show
 
 type MazeGrid = Vec.Vector (Vec.Vector Tile)
 
 data Maze = Maze {
   grid :: MazeGrid,
   player :: Player
-}
+} deriving Show
 
 -- move a block to the given coordinate
 translateBlock :: Coordinate -> Picture -> Picture
