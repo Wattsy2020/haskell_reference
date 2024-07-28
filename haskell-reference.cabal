@@ -81,6 +81,7 @@ executable haskell-reference
       SizedList,
       TypeClasses,
       VectorUtils,
+      BoardManipulation,
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
