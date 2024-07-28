@@ -33,25 +33,25 @@ import Assets
 -- Coordinate storing a colNumber and rowNumber
 data Coordinate = Coordinate Int Int deriving (Show, Eq)
 
-data Direction = Up | Down | Left | Right deriving Show
+data Direction = Up | Down | Left | Right deriving (Show, Eq)
 
-data EnterableBlock = Ground | Storage deriving Show
+data EnterableBlock = Ground | Storage deriving (Show, Eq)
 
-data OverlayBlock = Box deriving Show
+data OverlayBlock = Box deriving (Show, Eq)
 
-data Tile = Wall | EnterableTile EnterableBlock (Maybe OverlayBlock) deriving Show
+data Tile = Wall | EnterableTile EnterableBlock (Maybe OverlayBlock) deriving (Show, Eq)
 
 data Player = Player {
   location :: Coordinate,
   direction :: Direction
-} deriving Show
+} deriving (Show, Eq)
 
 type MazeGrid = Vec.Vector (Vec.Vector Tile)
 
 data Maze = Maze {
   grid :: MazeGrid,
   player :: Player
-} deriving Show
+} deriving (Show, Eq)
 
 -- move a block to the given coordinate
 translateBlock :: Coordinate -> Picture -> Picture

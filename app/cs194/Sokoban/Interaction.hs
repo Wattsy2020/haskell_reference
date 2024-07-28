@@ -47,7 +47,7 @@ startableInteraction Interaction{..} = Interaction Starting handleEvent' drawWor
         drawWorld' Starting = startScreen
         drawWorld' (Running world) = drawWorldF world
 
-data WinnableGameState state = Won | Playing state
+data WinnableGameState state = Won | Playing state deriving (Show, Eq)
 
 winnableInteraction :: forall state. 
     (state -> Bool) 
@@ -65,6 +65,25 @@ winnableInteraction isWonF Interaction{..} = Interaction (Playing initialStateF)
         drawWorld' Won = wonScreen
         drawWorld' (Playing state) = drawWorldF state
 
+newtype UndoableState state = UndoableState [state] deriving Show
+
+undoableInteraction :: forall state. (Eq state) => Interaction state -> Interaction (UndoableState state)
+undoableInteraction Interaction{..} = Interaction (UndoableState [initialStateF]) handleEvent' drawWorld'
+    where
+        handleEvent' :: Event -> UndoableState state -> UndoableState state
+        handleEvent' _ (UndoableState []) = error "can't handle an event with no state"
+        handleEvent' (KeyPress "Z") firstState@(UndoableState [_]) = firstState
+        handleEvent' (KeyPress "Z") (UndoableState (_ : previous)) = UndoableState previous
+        handleEvent' event (UndoableState states@(mostRecent : _)) = 
+            let newState = handleEventF event mostRecent in
+                if newState == mostRecent 
+                    then UndoableState states 
+                    else UndoableState (newState : states)
+
+        drawWorld' :: UndoableState state -> Picture
+        drawWorld' (UndoableState (mostRecent : _)) = drawWorldF mostRecent
+        drawWorld' (UndoableState []) = error "can't draw undrawable state"
+
 resettableInteraction :: forall state. Interaction state -> Interaction state
 resettableInteraction Interaction{..} = Interaction initialStateF handleEvent' drawWorldF    
     where
@@ -80,5 +99,6 @@ gameLoop :: IO ()
 gameLoop = interactionOf 
     $ resettableInteraction 
     $ startableInteraction 
+    $ undoableInteraction
     $ winnableInteraction isWon
     $ Interaction maze handleEvent drawWorld
