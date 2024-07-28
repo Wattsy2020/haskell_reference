@@ -10,7 +10,8 @@ module Board (
   Maze(..),
   maze,
   drawMaze,
-  translateBlock
+  translateBlock,
+  isWon
 ) where
 
 import Data.Vector qualified as Vec
@@ -110,3 +111,10 @@ drawGrid = Vec.foldl (&) blank . Vec.concat' . Vec.imap drawRow
 -- Draw the maze
 drawMaze :: Maze -> Picture
 drawMaze (Maze grid player) = drawPlayer player & drawGrid grid
+
+isStorageCovered :: Tile -> Bool
+isStorageCovered (EnterableTile Storage Nothing) = False
+isStorageCovered _ = True
+
+isWon :: Maze -> Bool
+isWon (Maze grid _) = Vec.all isStorageCovered (Vec.concat' grid)

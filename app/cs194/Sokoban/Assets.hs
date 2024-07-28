@@ -9,7 +9,9 @@ module Assets (
     playerRight,
     playerUp,
     playerDown,
-    startScreen) where 
+    startScreen,
+    wonScreen
+) where 
 
 import CodeWorld
 import Data.Text ()
@@ -91,3 +93,7 @@ playerDown = rotated pi playerUp
 startScreen :: Picture
 startScreen = scaled 3 3 (lettering "Sokoban!") 
     & scaled 0.5 0.5 $ translated 0 (-4) $ lettering "Press Space to Start"
+
+wonScreen :: Picture
+wonScreen = scaled 3 3 (lettering "You Won!") 
+    & scaled 0.5 0.5 $ translated 0 (-4) $ lettering "Thanks for Playing :)"

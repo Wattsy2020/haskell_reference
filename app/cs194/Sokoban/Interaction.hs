@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, RecordWildCards #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use <=<" #-}
 
@@ -9,7 +9,7 @@ import Prelude hiding (Left, Right)
 import CodeWorld
 
 import Board
-import Assets (startScreen)
+import Assets (startScreen, wonScreen)
 import BoardManipulation (movePlayer)
 
 -- Read text into a direction
@@ -27,13 +27,16 @@ handleEvent _ = id
 drawWorld :: Maze -> Picture
 drawWorld = scaled 0.2 0.2 . translateBlock (Coordinate (-4) (-4)) . drawMaze
 
-data Interaction state = Interaction state (Event -> state -> state) (state -> Picture)
+data Interaction state = Interaction {
+    initialStateF :: state, 
+    handleEventF :: Event -> state -> state,
+    drawWorldF :: state -> Picture
+}
 
-data StartableGameState a = Starting | Running a
+data StartableGameState state = Starting | Running state
 
 startableInteraction :: forall state. Interaction state -> Interaction (StartableGameState state)
-startableInteraction (Interaction initialStateF handleEventF drawWorldF) = 
-    Interaction Starting handleEvent' drawWorld'
+startableInteraction Interaction{..} = Interaction Starting handleEvent' drawWorld'
     where
         handleEvent' :: Event -> StartableGameState state -> StartableGameState state
         handleEvent' (KeyPress " ") Starting = Running initialStateF
@@ -44,9 +47,26 @@ startableInteraction (Interaction initialStateF handleEventF drawWorldF) =
         drawWorld' Starting = startScreen
         drawWorld' (Running world) = drawWorldF world
 
+data WinnableGameState state = Won | Playing state
+
+winnableInteraction :: forall state. 
+    (state -> Bool) 
+    -> Interaction state 
+    -> Interaction (WinnableGameState state)
+winnableInteraction isWonF Interaction{..} = Interaction (Playing initialStateF) handleEvent' drawWorld'
+    where
+        handleEvent' :: Event -> WinnableGameState state -> WinnableGameState state
+        handleEvent' _ Won = Won
+        handleEvent' event (Playing state)
+            | isWonF state = Won
+            | otherwise = Playing $ handleEventF event state
+
+        drawWorld' :: WinnableGameState state -> Picture
+        drawWorld' Won = wonScreen
+        drawWorld' (Playing state) = drawWorldF state
+
 resettableInteraction :: forall state. Interaction state -> Interaction state
-resettableInteraction (Interaction initialStateF handleEventF drawWorldF) =
-    Interaction initialStateF handleEvent' drawWorldF    
+resettableInteraction Interaction{..} = Interaction initialStateF handleEvent' drawWorldF    
     where
         handleEvent' :: Event -> state -> state
         handleEvent' (KeyPress "Esc") = const initialStateF
@@ -56,11 +76,9 @@ interactionOf :: Interaction a -> IO ()
 interactionOf (Interaction initialStateF handleEventF drawWorldF) = 
     activityOf initialStateF handleEventF drawWorldF
 
--- todo: implement the "Won the game" screen
--- then we want gameLoop = resetable ( winnable ( startable ( baseInteraction )))
-
 gameLoop :: IO ()
 gameLoop = interactionOf 
     $ resettableInteraction 
     $ startableInteraction 
+    $ winnableInteraction isWon
     $ Interaction maze handleEvent drawWorld
