@@ -1,6 +1,6 @@
 module Main where
 
-import Sokoban
+import NaturalCalculator
 
 main :: IO ()
-main = playSokoban
+main = calculatorMain

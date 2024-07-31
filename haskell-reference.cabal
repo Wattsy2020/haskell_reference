@@ -83,7 +83,8 @@ executable haskell-reference
       VectorUtils,
       BoardManipulation,
       RichestCustomerWealth,
-      MaximumParenthesesDepth
+      MaximumParenthesesDepth,
+      NaturalCalculator
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
