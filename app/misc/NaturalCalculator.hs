@@ -51,31 +51,30 @@ parseDigits :: Num a => a -> [Token a] -> (a, [Token a])
 parseDigits prev ((Digit value) : remaining) = parseDigits (10 * prev + value) remaining
 parseDigits prev remaining = (prev, remaining)
 
--- parse an expression, given the expression stack up until this point
--- expression stack is used to handle expressions nested in parenthesis
--- e.g. for (2 + (1 * 2)), the expression stack at * would look like [1, 2 +]
-parseExpression' :: (Eq a, Num a) => [Expression a] -> [Token a] -> Expression a
-parseExpression' [expr] [] = expr
-parseExpression' [] (Digit value : remaining) =
+-- parse an expression, given the expression up until this point
+-- returns the remaining tokens after parsing the expression
+parseExpression' :: (Eq a, Num a) => Maybe (Expression a) -> [Token a] -> (Expression a, [Token a])
+parseExpression' (Just expr) [] = (expr, [])
+parseExpression' Nothing (Digit value : remaining) =
     let (number, remainingTokens) = parseDigits value remaining in
-        parseExpression' [Value number] remainingTokens
-parseExpression' [prevExpression] (Operator op : remaining) = 
-    Expression prevExpression op (parseExpression' [] remaining)
+        parseExpression' (Just $ Value number) remainingTokens
+-- todo: handle operator precedence, if there was an operator with higher precedence previously then we should end the expression here and return to it
+parseExpression' (Just leftExpr) (Operator op : remaining) = 
+    let (rightExpr, remainingTokens) = parseExpression' Nothing remaining in
+        parseExpression' (Just $ Expression leftExpr op rightExpr) remainingTokens
 -- parse the expression in the brackets, use the CloseParen to mark the end of the expression
-parseExpression' exprStack (OpenParen : remaining) = parseExpression' exprStack remaining
-parseExpression' expr@(Just _) (CloseParen : remaining) = parseExpression' expr remaining
+parseExpression' Nothing (OpenParen : remaining) = parseExpression' Nothing remaining
+parseExpression' (Just expr) (CloseParen : remaining) = (expr, remaining)
 -- report incorrectly formed expressions
-parseExpression' (_ : _ : _) [] = error "extra expressions on the stack (likely a programming error)"
-parseExpression' [] (Operator _ : _) = error "no previous expression for the operator"
-parseExpression' (_ : _ : _) (Operator _ : _) = error "operators should have exactly one previous expression only"
-parseExpression' (_ : _) (Digit _ : _) = error "digit shouldn't have a previous expression"
-parseExpression' (_ : _) (OpenParen : _) = error "open parenthesis shouldn't have a previous expression"
-parseExpression' [] (CloseParen : _) = error "close parenthesis is not matched with an open parenthesis"
-parseExpression' [] [] = error "empty expression"
+parseExpression' Nothing (Operator _ : _) = error "no previous expression for the operator"
+parseExpression' (Just _) (Digit _ : _) = error "digit shouldn't have a previous expression"
+parseExpression' (Just _) (OpenParen : _) = error "open parenthesis shouldn't have a previous expression"
+parseExpression' Nothing (CloseParen : _) = error "close parenthesis is not matched with an open parenthesis"
+parseExpression' Nothing [] = error "empty expression"
 -- only operator needs the previous expression
 
 parseExpression :: (Eq a, Num a) => [Token a] -> Expression a
-parseExpression = parseExpression' []
+parseExpression = fst . parseExpression' Nothing
 
 -- evaluate an operation on its arguments
 evalOp :: Num a => Op -> a -> a -> a
@@ -98,5 +97,5 @@ calculatorMain = do
     print (fmap parseExpression lexed)
     print (eval expression :: Maybe Int)
     where
-        expression = "(11+3*(2+1)+2)+100"
+        expression = "11+3*(2+1)+2" -- (11+3*(2+1)+2)+100
         lexed = lexExpression expression :: Maybe [Token Int]
