@@ -82,6 +82,7 @@ executable haskell-reference
       TypeClasses,
       VectorUtils,
       BoardManipulation,
+      RichestCustomerWealth,
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
