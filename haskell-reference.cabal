@@ -64,6 +64,7 @@ executable haskell-reference
     other-modules: 
       Lecture1,
       Homework1,
+      Homework4,
       Sokoban,
       Assets,
       Board,

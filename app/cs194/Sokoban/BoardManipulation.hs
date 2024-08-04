@@ -18,7 +18,7 @@ adjacentCoordinate Right (Coordinate x y) = Coordinate (x + 1) y
 
 -- Try to get the tile at a coordinate (fails if tile is outside the maze)
 getTile :: Coordinate -> MazeGrid -> Maybe Tile
-getTile (Coordinate col row) grid = grid Vec.!? row >>= (Vec.!? col)
+getTile (Coordinate col row) = Vec.indexGrid row col
 
 -- Replace a coordinate with the given tile
 -- fails if trying to update the player tile
@@ -54,9 +54,9 @@ movePlayer direction maze'@(Maze grid player) =
       unmovedMaze = Maze grid (player { direction = direction }) in
   case getTile targetCoordinate grid of
     Just (EnterableTile _ Nothing) -> maze' { player = newPlayer }
-    Just (EnterableTile _ (Just Box)) -> 
-        maybe 
-        unmovedMaze 
-        (\maze1 -> maze1 { player = newPlayer }) 
+    Just (EnterableTile _ (Just Box)) ->
+        maybe
+        unmovedMaze
+        (\maze1 -> maze1 { player = newPlayer })
         (tryMoveBox direction targetCoordinate maze')
     _ -> unmovedMaze

@@ -1,6 +1,6 @@
 module Main where
 
-import NaturalCalculator
+import Homework4
 
 main :: IO ()
-main = calculatorMain
+main = homework4Main

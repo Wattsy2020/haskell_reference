@@ -31,15 +31,15 @@ import Assets
       playerDown )
 
 -- Coordinate storing a colNumber and rowNumber
-data Coordinate = Coordinate Int Int deriving (Show, Eq)
+data Coordinate = Coordinate Int Int deriving (Show, Eq, Ord)
 
-data Direction = Up | Down | Left | Right deriving (Show, Eq)
+data Direction = Up | Down | Left | Right deriving (Show, Eq, Ord)
 
-data EnterableBlock = Ground | Storage deriving (Show, Eq)
+data EnterableBlock = Ground | Storage deriving (Show, Eq, Ord)
 
-data OverlayBlock = Box deriving (Show, Eq)
+data OverlayBlock = Box deriving (Show, Eq, Ord)
 
-data Tile = Wall | EnterableTile EnterableBlock (Maybe OverlayBlock) deriving (Show, Eq)
+data Tile = Wall | EnterableTile EnterableBlock (Maybe OverlayBlock) deriving (Show, Eq, Ord)
 
 data Player = Player {
   location :: Coordinate,
