@@ -65,6 +65,7 @@ executable haskell-reference
       Lecture1,
       Homework1,
       Homework4,
+      Homework5,
       Sokoban,
       Assets,
       Board,
@@ -85,7 +86,8 @@ executable haskell-reference
       BoardManipulation,
       RichestCustomerWealth,
       MaximumParenthesesDepth,
-      NaturalCalculator
+      NaturalCalculator,
+      StringUtils
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -103,7 +105,8 @@ executable haskell-reference
       app,
       app/cs194,
       app/cs194/Sokoban,
-      app/misc
+      app/misc,
+      app/common
 
     -- Base language which the package is written in.
     default-language: GHC2021

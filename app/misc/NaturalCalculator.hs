@@ -3,6 +3,7 @@
 {-# HLINT ignore "Use <=<" #-}
 module NaturalCalculator where
 import Data.Maybe (mapMaybe)
+import StringUtils
 
 data ParseError = 
     InvalidDigit Char
@@ -28,25 +29,17 @@ data Token a =
     | CloseParen
     deriving (Show, Eq)
 
-readDigit :: Num a => Char -> Either ParseError a
-readDigit '0' = Right 0
-readDigit '1' = Right 1
-readDigit '2' = Right 2
-readDigit '3' = Right 3
-readDigit '4' = Right 4
-readDigit '5' = Right 5
-readDigit '6' = Right 6
-readDigit '7' = Right 7
-readDigit '8' = Right 8
-readDigit '9' = Right 9
-readDigit char = Left (InvalidDigit char)
+readDigit' :: Num a => Char -> Either ParseError a
+readDigit' char = case readDigit char of
+    Nothing -> Left (InvalidDigit char)
+    Just digit -> Right digit
 
 lexChar :: Num a => Char -> Either ParseError (Token a)
 lexChar '(' = Right OpenParen
 lexChar ')' = Right CloseParen
 lexChar '+' = Right (Operator Plus)
 lexChar '*' = Right (Operator Multiply)
-lexChar other = fmap Digit (readDigit other)
+lexChar other = fmap Digit (readDigit' other)
 
 lexExpression :: Num a => String -> Either ParseError [Token a]
 lexExpression = mapM lexChar

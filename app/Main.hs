@@ -1,6 +1,6 @@
 module Main where
 
-import Homework4
+import Homework5
 
 main :: IO ()
-main = homework4Main
+main = homework5Main
