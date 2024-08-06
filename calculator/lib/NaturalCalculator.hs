@@ -1,9 +1,8 @@
 -- A calculator for natural expressions
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use <=<" #-}
-module NaturalCalculator (eval, calculatorTest, ParseError) where
+module NaturalCalculator (eval, parseExpression, lexExpression, ParseError, Op, Token) where
 
-import Data.Maybe (mapMaybe)
 import StringUtils (readDigit)
 
 data ParseError =
@@ -116,35 +115,3 @@ evalExpression (Expression left op right) = evalOp op (evalExpression left) (eva
 -- parse and evaluate a string expression
 eval :: Num a => String -> Either ParseError a
 eval = fmap evalExpression . (>>= parseExpression) . lexExpression
-
-testCases :: [(String, Int)]
-testCases = [("1+3*2", 7),
-    ("3*2+1", 7),
-    ("1+3*2+1",8),
-    ("11+3*(2+1)+2",22),
-    ("1+3*(1+3*2)",22),
-    ("1+3*(1+3*2)+1",23),
-    ("1+3*(1+3*2+1)+1",26),
-    ("0+(11+3*(2+1+1)+2)+100",125),
-    ("(1)+1", 2),
-    ("(11+3*(2+1-1)-2)+100",115),
-    ("-4*2", -8)]
-
-testPasses :: (String, Int) -> Bool
-testPasses (exprStr, result) = eval exprStr == Right result
-
-getFailedTest :: (String, Int) -> Maybe String
-getFailedTest (exprStr, result)
-    | testPasses (exprStr, result) = Nothing
-    | otherwise = Just $ show $ fmap parseExpression (lexExpression exprStr :: Either ParseError [Token Int])
-
-calculatorTest :: IO ()
-calculatorTest = do
-    print $ mapMaybe getFailedTest testCases
-    print $ "Expression: " ++ expression
-    print lexed
-    print $ lexed >>= parseExpression
-    print (eval expression :: Either ParseError Int)
-    where
-        expression = "(11+3*(2+1+1)+2)+100"
-        lexed = lexExpression expression :: Either ParseError [Token Int]

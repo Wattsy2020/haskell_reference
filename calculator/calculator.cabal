@@ -83,3 +83,13 @@ library calculator-lib
     hs-source-dirs: lib
     build-depends: base ^>=4.17.2.1
     default-language: GHC2021
+
+test-suite calculator-tests
+    type: exitcode-stdio-1.0
+    main-is: main.hs
+    build-depends: 
+        base ^>=4.17.2.1,
+        hspec ^>=2.11.9,
+        calculator-lib
+    hs-source-dirs: tests
+    default-language: GHC2021
