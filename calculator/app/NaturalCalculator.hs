@@ -17,6 +17,7 @@ data ParseError =
 data Op =
     Plus
     | Multiply
+    | Minus
     deriving (Show, Eq)
 
 data Token a =
@@ -36,6 +37,7 @@ lexChar '(' = Right OpenParen
 lexChar ')' = Right CloseParen
 lexChar '+' = Right (Operator Plus)
 lexChar '*' = Right (Operator Multiply)
+lexChar '-' = Right (Operator Minus)
 lexChar other = fmap Digit (readDigit' other)
 
 lexExpression :: Num a => String -> Either ParseError [Token a]
@@ -54,10 +56,16 @@ parseDigits :: Num a => a -> [Token a] -> (a, [Token a])
 parseDigits prev ((Digit value) : remaining) = parseDigits (10 * prev + value) remaining
 parseDigits prev remaining = (prev, remaining)
 
+-- stop parsing the next tokens when encountering a stop instruction (started by the close bracket)
+handleContinuation :: (Num a) => Expression a -> [Token a] -> ContinueInstruction -> Either ParseError (Expression a, [Token a], ContinueInstruction)
+handleContinuation newExpr remainingTokens continueInstruction = case continueInstruction of
+    Stop -> Right (newExpr, remainingTokens, Stop) -- pass the stop instruction until getting to the open paren which will realise we're going out of a sub-xpression
+    Continue -> parseExpression' (Just newExpr) False remainingTokens
+
 -- parse an expression, given the expression up until this point
 -- returns the remaining tokens after parsing the expression
 -- todo: Make this return an `Either`
-parseExpression' :: (Eq a, Num a) => Maybe (Expression a) -> Bool -> [Token a] -> Either ParseError (Expression a, [Token a], ContinueInstruction)
+parseExpression' :: Num a => Maybe (Expression a) -> Bool -> [Token a] -> Either ParseError (Expression a, [Token a], ContinueInstruction)
 parseExpression' (Just expr) _ [] = Right (expr, [], Stop)
 parseExpression' Nothing highPrecedence (Digit value : remaining) =
     let (number, remainingTokens) = parseDigits value remaining in
@@ -67,9 +75,11 @@ parseExpression' Nothing highPrecedence (Digit value : remaining) =
 parseExpression' (Just leftExpr) _ (Operator op : remaining) = do
     (rightExpr, remainingTokens, continueInstruction) <- parseExpression' Nothing (op == Multiply) remaining
     let operatorExpr = Expression leftExpr op rightExpr in
-        case continueInstruction of -- stop parsing the next tokens when encountering the close bracket
-            Stop -> Right (operatorExpr, remainingTokens, Stop) -- pass the stop instruction until getting to the open paren which will realise we're going out of a sub-xpression
-            Continue -> parseExpression' (Just operatorExpr) False remainingTokens
+        handleContinuation operatorExpr remainingTokens continueInstruction
+parseExpression' Nothing _ (Operator Minus : remaining) = do
+    (rightExpr, remainingTokens, continueInstruction) <- parseExpression' Nothing True remaining
+    let operatorExpr = Expression (Value 0) Minus rightExpr in
+        handleContinuation operatorExpr remainingTokens continueInstruction
 -- reset precedence inside brackets, it's a separate operation
 -- also, tell the consumer of this bracketed expression to continue parsing, after the close paren told the inner sub-expression to stop parsing
 parseExpression' Nothing _ (OpenParen : remaining) = do
@@ -83,19 +93,20 @@ parseExpression' (Just _) _ (OpenParen : _) = Left (InvalidExpression "open pare
 parseExpression' Nothing _ (CloseParen : _) = Left UnmatchingParenthesis
 parseExpression' Nothing _ [] = Left EmptyExpression
 
-handleParseExpression :: (Eq a, Num a) => (Expression a, [Token a], ContinueInstruction) -> Either ParseError (Expression a)
+handleParseExpression :: Num a => (Expression a, [Token a], ContinueInstruction) -> Either ParseError (Expression a)
 handleParseExpression result = case result of
     (expr, [], _) -> Right expr
     -- handle when there are leftover tokens, which can happen if there is a top level bracket like (1)+1
     (expr, remaining, _) -> parseExpression' (Just expr) False remaining >>= handleParseExpression
 
-parseExpression :: (Eq a, Num a) => [Token a] -> Either ParseError (Expression a)
+parseExpression :: Num a => [Token a] -> Either ParseError (Expression a)
 parseExpression = (>>= handleParseExpression) . parseExpression' Nothing False
 
 -- evaluate an operation on its arguments
 evalOp :: Num a => Op -> a -> a -> a
 evalOp Plus = (+)
 evalOp Multiply = (*)
+evalOp Minus = (-)
 
 -- evaluate an expression
 evalExpression :: Num a => Expression a -> a
@@ -103,7 +114,7 @@ evalExpression (Value result) = result
 evalExpression (Expression left op right) = evalOp op (evalExpression left) (evalExpression right)
 
 -- parse and evaluate a string expression
-eval :: (Eq a, Num a) => String -> Either ParseError a
+eval :: Num a => String -> Either ParseError a
 eval = fmap evalExpression . (>>= parseExpression) . lexExpression
 
 testCases :: [(String, Int)]
@@ -115,7 +126,9 @@ testCases = [("1+3*2", 7),
     ("1+3*(1+3*2)+1",23),
     ("1+3*(1+3*2+1)+1",26),
     ("0+(11+3*(2+1+1)+2)+100",125),
-    ("(1)+1", 2)]
+    ("(1)+1", 2),
+    ("(11+3*(2+1-1)-2)+100",115),
+    ("-4*2", -8)]
 
 testPasses :: (String, Int) -> Bool
 testPasses (exprStr, result) = eval exprStr == Right result

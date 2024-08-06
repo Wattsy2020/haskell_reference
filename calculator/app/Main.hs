@@ -1,6 +1,6 @@
 module Main where
 
-import NaturalCalculator ( ParseError, eval )
+import NaturalCalculator
 
 interactLines :: (String -> String) -> IO ()
 interactLines f = do
@@ -13,8 +13,11 @@ showResult result = case result of
     Left errorReason -> show errorReason
     Right answer -> show answer
 
-main :: IO ()
-main = do
+calculatorMain :: IO ()
+calculatorMain = do
     putStrLn "Welcome to the Calculator!"
     putStrLn "Enter an expression to calculate the answer:"
     interactLines (showResult . (eval :: String -> Either ParseError Integer))
+
+main :: IO ()
+main = calculatorMain
