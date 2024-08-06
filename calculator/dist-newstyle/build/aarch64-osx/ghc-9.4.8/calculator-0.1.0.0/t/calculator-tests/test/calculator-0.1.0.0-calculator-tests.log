@@ -1,9 +1,0 @@
-Test suite calculator-tests: RUNNING...
-
-Calculator
-  Passes Manual Test cases [✔]
-
-Finished in 0.0006 seconds
-1 example, 0 failures
-Test suite calculator-tests: PASS
-Test suite logged to: /Users/liam/code/haskell_reference/calculator/dist-newstyle/build/aarch64-osx/ghc-9.4.8/calculator-0.1.0.0/t/calculator-tests/test/calculator-0.1.0.0-calculator-tests.log
