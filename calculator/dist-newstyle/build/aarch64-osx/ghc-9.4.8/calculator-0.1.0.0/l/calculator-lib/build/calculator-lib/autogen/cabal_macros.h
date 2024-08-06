@@ -20,16 +20,6 @@
   (major1) == 4 && (major2) <  17 || \
   (major1) == 4 && (major2) == 17 && (minor) <= 2)
 #endif /* MIN_VERSION_base */
-/* package calculator-0.1.0.0 */
-#ifndef VERSION_calculator
-#define VERSION_calculator "0.1.0.0"
-#endif /* VERSION_calculator */
-#ifndef MIN_VERSION_calculator
-#define MIN_VERSION_calculator(major1,major2,minor) (\
-  (major1) <  0 || \
-  (major1) == 0 && (major2) <  1 || \
-  (major1) == 0 && (major2) == 1 && (minor) <= 0)
-#endif /* MIN_VERSION_calculator */
 
 /* tool gcc-15.0.0 */
 #ifndef TOOL_VERSION_gcc
@@ -112,8 +102,11 @@
   (major1) == 9 && (major2) == 4 && (minor) <= 8)
 #endif /* MIN_TOOL_VERSION_runghc */
 
+#ifndef CURRENT_PACKAGE_KEY
+#define CURRENT_PACKAGE_KEY "calculator-0.1.0.0-inplace-calculator-lib"
+#endif /* CURRENT_packageKey */
 #ifndef CURRENT_COMPONENT_ID
-#define CURRENT_COMPONENT_ID "calculator-0.1.0.0-inplace-calculator"
+#define CURRENT_COMPONENT_ID "calculator-0.1.0.0-inplace-calculator-lib"
 #endif /* CURRENT_COMPONENT_ID */
 #ifndef CURRENT_PACKAGE_VERSION
 #define CURRENT_PACKAGE_VERSION "0.1.0.0"
