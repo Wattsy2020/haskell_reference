@@ -1,11 +1,12 @@
 -- A calculator for natural expressions
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use <=<" #-}
-module NaturalCalculator where
-import Data.Maybe (mapMaybe)
-import StringUtils
+module NaturalCalculator (eval, calculatorTest, ParseError) where
 
-data ParseError = 
+import Data.Maybe (mapMaybe)
+import StringUtils (readDigit)
+
+data ParseError =
     InvalidDigit Char
     | InvalidExpression String
     | UnmatchingParenthesis
@@ -17,10 +18,6 @@ data Op =
     Plus
     | Multiply
     deriving (Show, Eq)
-
-precedence :: Op -> Int
-precedence Plus = 0
-precedence Multiply = 1
 
 data Token a =
     Digit a
@@ -42,7 +39,7 @@ lexChar '*' = Right (Operator Multiply)
 lexChar other = fmap Digit (readDigit' other)
 
 lexExpression :: Num a => String -> Either ParseError [Token a]
-lexExpression = mapM lexChar
+lexExpression = mapM lexChar . filter (/= ' ')
 
 -- parse into abstract syntax tree
 data Expression a =
@@ -67,7 +64,7 @@ parseExpression' Nothing highPrecedence (Digit value : remaining) =
         if highPrecedence -- if highPrecedence then return immediately and let the expression with higher precedence evaluate the remaining tokens
             then Right (Value number, remainingTokens, Continue)
             else parseExpression' (Just $ Value number) highPrecedence remainingTokens
-parseExpression' (Just leftExpr) _ (Operator op : remaining) = do 
+parseExpression' (Just leftExpr) _ (Operator op : remaining) = do
     (rightExpr, remainingTokens, continueInstruction) <- parseExpression' Nothing (op == Multiply) remaining
     let operatorExpr = Expression leftExpr op rightExpr in
         case continueInstruction of -- stop parsing the next tokens when encountering the close bracket
@@ -128,8 +125,8 @@ getFailedTest (exprStr, result)
     | testPasses (exprStr, result) = Nothing
     | otherwise = Just $ show $ fmap parseExpression (lexExpression exprStr :: Either ParseError [Token Int])
 
-calculatorMain :: IO ()
-calculatorMain = do
+calculatorTest :: IO ()
+calculatorTest = do
     print $ mapMaybe getFailedTest testCases
     print $ "Expression: " ++ expression
     print lexed
