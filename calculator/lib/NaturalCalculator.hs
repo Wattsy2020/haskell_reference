@@ -74,6 +74,17 @@ handleContinuation newExpr remainingTokens continueInstruction = case continueIn
   Stop -> Right (newExpr, remainingTokens, Stop) -- pass the stop instruction until getting to the open paren which will realise we're going out of a sub-xpression
   Continue -> parseExpression' (Just newExpr) False remainingTokens
 
+parseBrackets :: (Num a) => Maybe (Expression a) -> Bool -> [Token a] -> Either ParseError (Expression a, [Token a], ContinueInstruction)
+parseBrackets expr _ remaining = do
+  (newExpr, remainingTokens, continueInstruction) <- parseExpression' expr False remaining
+  case continueInstruction of
+    Stop -> Right (newExpr, remainingTokens, Continue)
+    --we might have already exited from inner brackets, and need to continue parsing the next tokens inside this bracket pair
+    -- e.g. consider evaluating 8*((-3)+5)
+    -- we also need to continue handling exits from further inner brackets, so we recurse
+    -- e.g. consider evaluating "0-(((3)+(1))-8)"
+    Continue -> parseBrackets (Just newExpr) False remainingTokens
+
 -- parse an expression, given the expression up until this point
 -- returns the remaining tokens after parsing the expression
 -- todo: Make this return an `Either`
@@ -94,13 +105,7 @@ parseExpression' Nothing _ (Operator Minus : remaining) = do
    in handleContinuation operatorExpr remainingTokens continueInstruction
 -- reset precedence inside brackets, it's a separate operation
 -- also, tell the consumer of this bracketed expression to continue parsing, after the close paren told the inner sub-expression to stop parsing
-parseExpression' Nothing _ (OpenParen : remaining) = do
-  (expr, remainingTokens, continueInstruction) <- parseExpression' Nothing False remaining
-  case continueInstruction of
-    Stop -> Right (expr, remainingTokens, Continue)
-    --we might have already exited from inner brackets, and need to continue parsing the next tokens inside this bracket pair
-    -- e.g. consider evaluating 8*((-3)+5)
-    Continue -> parseExpression' (Just expr) False remainingTokens
+parseExpression' Nothing _ (OpenParen : remaining) = parseBrackets Nothing False remaining
 parseExpression' (Just expr) _ (CloseParen : remaining) = Right (expr, remaining, Stop)
 -- report incorrectly formed expressions
 parseExpression' Nothing _ (Operator _ : _) = Left (InvalidExpression "no previous expression for the operator")

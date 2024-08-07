@@ -34,15 +34,44 @@ instance Arbitrary Op where
   arbitrary :: Gen Op
   arbitrary = elements [ Plus, Multiply, Minus]
 
-instance (Arbitrary a) => Arbitrary (Expression a) where
+instance (Arbitrary a, Num a) => Arbitrary (Expression a) where
   arbitrary :: Gen (Expression a)
   arbitrary = frequency [
     (1, Value <$> (arbitrary :: Gen a)),
     (1, Expression <$> (arbitrary :: Gen (Expression a)) <*> (arbitrary :: Gen Op) <*> (arbitrary :: Gen (Expression a)))]
 
-  shrink :: Expression a -> [Expression a]
-  shrink (Value _) = []
-  shrink (Expression leftExpr _ rightExpr) = [leftExpr, rightExpr]
+  shrink :: Num a => Expression a -> [Expression a]
+  shrink (Value val) = map Value $ shrink val
+  shrink expr@(Expression (Value leftVal) op (Value rightVal)) = [Value $ evalExpression expr]
+  shrink expr@(Expression leftExpr op rightVal@(Value _)) = [
+    leftExpr,
+    rightVal,
+    Expression evalLeft op rightVal] 
+    ++ map (\shrunkExpr -> Expression shrunkExpr op rightVal) shrunkLeft
+    where
+      evalLeft = Value $ evalExpression leftExpr
+      shrunkLeft = shrink leftExpr
+  shrink expr@(Expression leftVal@(Value _) op rightExpr) = [
+    leftVal,
+    rightExpr,
+    Expression leftVal op evalRight] 
+    ++ map (Expression leftVal op) shrunkRight
+    where
+      evalRight = Value $ evalExpression rightExpr
+      shrunkRight = shrink rightExpr
+  shrink (Expression leftExpr op rightExpr) = [
+      leftExpr, 
+      rightExpr, 
+      Expression evalLeft op evalRight,
+      Expression evalLeft op rightExpr,
+      Expression leftExpr op evalRight]
+      ++ map (\shrunkExpr -> Expression shrunkExpr op rightExpr) shrunkLeft
+      ++ map (Expression leftExpr op) shrunkRight
+    where
+      evalLeft = Value $ evalExpression leftExpr
+      evalRight = Value $ evalExpression rightExpr
+      shrunkLeft = shrink leftExpr
+      shrunkRight = shrink rightExpr
 
 prop_serializeroundtrip :: (Show a, Eq a, Num a) => Expression a -> Bool
 prop_serializeroundtrip expr = case readExpression $ serializeExpression expr of
@@ -52,6 +81,6 @@ prop_serializeroundtrip expr = case readExpression $ serializeExpression expr of
 main :: IO ()
 main = hspec $ do
   describe "Calculator" $ do
-    it "Passes Manual Test cases" $ do
-      mapMaybe getFailedTest testCases `shouldBe` []
+    it "Passes Manual Test cases" $ mapMaybe getFailedTest testCases `shouldBe` []
+    
     it "Passes Property Test cases" $ property (prop_serializeroundtrip :: Expression Int -> Bool)
