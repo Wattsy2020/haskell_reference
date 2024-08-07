@@ -30,7 +30,7 @@ evalExpr2 :: (Num a) => [Token a] -> Either String [a]
 evalExpr2 = foldl (\stack newToken -> stack >>= evalToken newToken) (Right [])
 
 evalExpression :: (Num a) => [Token a] -> Either String a
-evalExpression tokens = 
+evalExpression tokens =
   case foldl (\stack newToken -> stack >>= evalToken newToken) (Right []) tokens of
     Left errorStr -> Left errorStr
     Right [] -> Left "no tokens to evaluate"

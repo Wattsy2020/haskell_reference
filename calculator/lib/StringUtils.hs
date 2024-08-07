@@ -1,6 +1,6 @@
 module StringUtils where
 
-readDigit :: Num a => Char -> Maybe a
+readDigit :: (Num a) => Char -> Maybe a
 readDigit '0' = Just 0
 readDigit '1' = Just 1
 readDigit '2' = Just 2
