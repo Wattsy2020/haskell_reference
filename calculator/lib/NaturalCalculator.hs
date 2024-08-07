@@ -4,7 +4,10 @@
 {-# HLINT ignore "Use <=<" #-}
 module NaturalCalculator
   ( eval,
+    evalExpression,
     parseExpression,
+    readExpression,
+    serializeExpression,
     lexExpression,
     ParseError,
     Op (..),
@@ -36,6 +39,11 @@ data Token a
   | CloseParen
   deriving (Show, Eq)
 
+data Expression a
+  = Value a
+  | Expression (Expression a) Op (Expression a)
+  deriving (Show, Eq)
+
 readDigit' :: (Num a) => Char -> Either ParseError a
 readDigit' char = case readDigit char of
   Nothing -> Left (InvalidDigit char)
@@ -53,11 +61,6 @@ lexExpression :: (Num a) => String -> Either ParseError [Token a]
 lexExpression = mapM lexChar . filter (/= ' ')
 
 -- parse into abstract syntax tree
-data Expression a
-  = Value a
-  | Expression (Expression a) Op (Expression a)
-  deriving (Show)
-
 data ContinueInstruction = Continue | Stop
 
 -- combine all the starting tokens that are digits into a number, also returning remaining tokens
@@ -111,6 +114,9 @@ handleParseExpression result = case result of
 parseExpression :: (Num a) => [Token a] -> Either ParseError (Expression a)
 parseExpression = (>>= handleParseExpression) . parseExpression' Nothing False
 
+readExpression :: (Num a) => String -> Either ParseError (Expression a)
+readExpression = (>>= parseExpression) . lexExpression
+
 -- evaluate an operation on its arguments
 evalOp :: (Num a) => Op -> a -> a -> a
 evalOp Plus = (+)
@@ -122,6 +128,18 @@ evalExpression :: (Num a) => Expression a -> a
 evalExpression (Value result) = result
 evalExpression (Expression left op right) = evalOp op (evalExpression left) (evalExpression right)
 
+-- convert operation to string
+serializeOp :: Op -> String
+serializeOp Plus = "+"
+serializeOp Minus = "-"
+serializeOp Multiply = "*"
+
+-- convert expression to string
+serializeExpression :: (Show a) => Expression a -> String
+serializeExpression (Value result) = show result
+serializeExpression (Expression leftExpr op rightExpr) = 
+  "(" <> serializeExpression leftExpr <> ")" <> serializeOp op <> "(" <> serializeExpression rightExpr <> ")"
+
 -- parse and evaluate a string expression
 eval :: (Num a) => String -> Either ParseError a
-eval = fmap evalExpression . (>>= parseExpression) . lexExpression
+eval = fmap evalExpression . readExpression
