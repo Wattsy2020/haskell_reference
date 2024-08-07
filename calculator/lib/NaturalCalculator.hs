@@ -95,8 +95,12 @@ parseExpression' Nothing _ (Operator Minus : remaining) = do
 -- reset precedence inside brackets, it's a separate operation
 -- also, tell the consumer of this bracketed expression to continue parsing, after the close paren told the inner sub-expression to stop parsing
 parseExpression' Nothing _ (OpenParen : remaining) = do
-  (expr, remainingTokens, _) <- parseExpression' Nothing False remaining
-  Right (expr, remainingTokens, Continue)
+  (expr, remainingTokens, continueInstruction) <- parseExpression' Nothing False remaining
+  case continueInstruction of
+    Stop -> Right (expr, remainingTokens, Continue)
+    --we might have already exited from inner brackets, and need to continue parsing the next tokens inside this bracket pair
+    -- e.g. consider evaluating 8*((-3)+5)
+    Continue -> parseExpression' (Just expr) False remainingTokens
 parseExpression' (Just expr) _ (CloseParen : remaining) = Right (expr, remaining, Stop)
 -- report incorrectly formed expressions
 parseExpression' Nothing _ (Operator _ : _) = Left (InvalidExpression "no previous expression for the operator")
