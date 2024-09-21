@@ -1,6 +1,6 @@
 module Main where
 
-import Homework7 (homework7Main)
+import Homework8 (homeWork8Main)
 
 main :: IO ()
-main = homework7Main
+main = homeWork8Main

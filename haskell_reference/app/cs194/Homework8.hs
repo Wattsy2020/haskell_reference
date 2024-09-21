@@ -1,4 +1,7 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use unless" #-}
 module Homework8 where
+import Data.Bifunctor (first)
 
 data ComplicatedA a b
     = Con1 a b
@@ -103,6 +106,78 @@ func10 xs = do
 func10' :: Functor f => f Integer -> f Integer
 func10' = fmap (\x -> x*x + 10)
 
+newtype Parser a = P (String -> Maybe (a, String))
+
+runParser :: Parser a -> String -> Maybe (a, String)
+runParser (P p) = p
+
+parse :: Parser a -> String -> Maybe a
+parse p input = case runParser p input of
+    Just (result, "") -> Just result
+    _ -> Nothing
+
+instance Functor Parser where
+  fmap :: (a -> b) -> Parser a -> Parser b
+  fmap f parser = P $ fmap (Data.Bifunctor.first f) . runParser parser
+
+instance Applicative Parser where
+  pure :: a -> Parser a
+  pure result = P (\input -> Just (result, input))
+
+  (<*>) :: Parser (a -> b) -> Parser a -> Parser b
+  (<*>) fp fx = P (\input -> do
+    (parseFunc, rem1) <- runParser fp input
+    (argument, rem2) <- runParser fx rem1
+    Just (parseFunc argument, rem2))
+
+instance Monad Parser where
+  (>>=) :: Parser a -> (a -> Parser b) -> Parser b
+  (>>=) fx fp = P (\input -> do
+    (argument, rem1) <- runParser fx input
+    runParser (fp argument) rem1) 
+
+noParser :: Parser a
+noParser = P (const Nothing)
+
+anyChar :: Parser Char
+anyChar = P go
+    where
+        go :: String -> Maybe (Char, String)
+        go "" = Nothing
+        go (c:cs) = Just (c, cs)
+
+-- try to find a character, if found then succeed (and return no input), otherwise fail
+char :: Char -> Parser ()
+char c = anyChar >>= (\char' -> if char' == c then pure () else noParser)
+
+-- succeed if finding any character other than the one specified
+anyCharBut :: Char -> Parser Char
+anyCharBut c = anyChar >>= (\char' -> if char' /= c then pure char' else noParser)
+
+-- try the left parser, if it fails then try the right parser
+orElse :: Parser a -> Parser a -> Parser a
+orElse p1 p2 = P (\str -> case runParser p1 str of
+    result@(Just _) -> result
+    Nothing -> runParser p2 str)
+
+-- repeatedly apply a parser until it fails
+many :: Parser a -> Parser [a]
+many parser = orElse (parser >>= (\result -> (result:) <$> many parser)) (pure [])
+
+-- repeatedly apply alternating parsers
+sepBy :: Parser a -> Parser () -> Parser [a]
+sepBy p1 p2 = (p1 >>= (\result -> (result:) <$> ((p2 *> sepBy p1 p2) `orElse` pure []))) `orElse` pure []
+
+parseCSV :: Parser [[String]]
+parseCSV = many parseLine
+  where
+    parseLine = parseCell `sepBy` char ',' <* char '\n'
+    parseCell = do
+        char '"'
+        content <- many (anyCharBut '"')
+        char '"'
+        return content
+
 homeWork8Main :: IO ()
 homeWork8Main = do
     -- contruct example of ComplicatedA
@@ -111,3 +186,9 @@ homeWork8Main = do
     let conExample2 = Con2 [Just (+ (1:: Int)), Nothing]
         mapped = fmap ((++ " mapped") . show) conExample2
         in print $ applyComplicated mapped 1
+    let parseExample = runParser (many (anyCharBut ')')) "(hello there) further text"
+        in print parseExample
+    let parseLines = runParser (many (anyCharBut '\n') `sepBy` char '\n') "hello\nworld\n!"
+        in print parseLines
+    let parsedCsv = parse parseCSV "\"ab\",\"cd\"\n\"\",\"de\"\n\n"
+        in print parsedCsv

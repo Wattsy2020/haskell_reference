@@ -68,6 +68,7 @@ executable haskell-reference
       Homework4,
       Homework5,
       Homework7,
+      Homework8,
       Sokoban,
       Assets,
       Board,
