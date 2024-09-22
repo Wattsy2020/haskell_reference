@@ -1,6 +1,6 @@
 module Main where
 
-import Homework8 (homeWork8Main)
+import Homework8 (homeWork8INIMain)
 
 main :: IO ()
-main = homeWork8Main
+main = homeWork8INIMain

@@ -1,7 +1,12 @@
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# HLINT ignore "Use unless" #-}
+{-# HLINT ignore "Avoid lambda" #-}
 module Homework8 where
 import Data.Bifunctor (first)
+import Control.Monad (void)
+import Data.Char (isAlphaNum)
+import System.IO
+import System.Exit
 
 data ComplicatedA a b
     = Con1 a b
@@ -134,17 +139,22 @@ instance Monad Parser where
   (>>=) :: Parser a -> (a -> Parser b) -> Parser b
   (>>=) fx fp = P (\input -> do
     (argument, rem1) <- runParser fx input
-    runParser (fp argument) rem1) 
+    runParser (fp argument) rem1)
 
 noParser :: Parser a
 noParser = P (const Nothing)
 
+-- parse any character, if there is one
 anyChar :: Parser Char
 anyChar = P go
     where
         go :: String -> Maybe (Char, String)
         go "" = Nothing
         go (c:cs) = Just (c, cs)
+
+-- parse any alpha numeric character
+anyAlphaNum :: Parser Char
+anyAlphaNum = anyChar >>= (\char' -> if Data.Char.isAlphaNum char' then pure char' else noParser)
 
 -- try to find a character, if found then succeed (and return no input), otherwise fail
 char :: Char -> Parser ()
@@ -164,19 +174,86 @@ orElse p1 p2 = P (\str -> case runParser p1 str of
 many :: Parser a -> Parser [a]
 many parser = orElse (parser >>= (\result -> (result:) <$> many parser)) (pure [])
 
+-- apply a parser at least once, then apply until failure
+oneOrMany :: Parser a -> Parser [a]
+oneOrMany parser = parser >>= (\result -> (result:) <$> many parser)
+
+-- run a parser zero or one times (greedily tries to run the parser once)
+zeroOrOne :: Parser a -> Parser (Maybe a)
+zeroOrOne parser = orElse (Just <$> parser) (pure Nothing)
+
 -- repeatedly apply alternating parsers
 sepBy :: Parser a -> Parser () -> Parser [a]
 sepBy p1 p2 = (p1 >>= (\result -> (result:) <$> ((p2 *> sepBy p1 p2) `orElse` pure []))) `orElse` pure []
+
+-- parse a string surrounded by the same char on both sides
+enclosedBy :: Char -> Parser String
+enclosedBy c = char c *> many (anyCharBut c) <* char c
+
+-- parse a string surrounded by two different chars on each side
+enclosed :: Char -> Char -> Parser String
+enclosed leftChar rightChar = char leftChar *> many (anyCharBut rightChar) <* char rightChar
+
+chainParser :: Parser String -> Parser a -> Parser a
+chainParser p1 p2 = p1 >>= (\parsed -> maybe noParser pure (parse p2 parsed))
+
+-- consume 0 or more spaces
+spaces :: Parser ()
+spaces = Control.Monad.void (many (char ' '))
 
 parseCSV :: Parser [[String]]
 parseCSV = many parseLine
   where
     parseLine = parseCell `sepBy` char ',' <* char '\n'
-    parseCell = do
-        char '"'
-        content <- many (anyCharBut '"')
-        char '"'
-        return content
+    parseCell = enclosedBy '"'
+
+parseArray :: Parser [String]
+parseArray = enclosed '[' ']' `chainParser` (many (anyCharBut ',') `sepBy` char ',')
+
+-- INI File Parser
+newtype Identifer = Identifier String deriving Show
+newtype Value = Value String deriving Show
+newtype Declaration = Declaration (Identifer, Value) deriving Show
+newtype Section = Section (Identifer, [Declaration]) deriving Show
+newtype INIFile = INIFile [Section] deriving Show
+
+parseIdentifier :: Parser Identifer
+parseIdentifier = Identifier <$> oneOrMany anyAlphaNum
+
+parseValue :: Parser Value
+parseValue = Value <$> many (anyCharBut '\n')
+
+-- Parse an INI section header
+parseHeader :: Parser Identifer
+parseHeader = enclosed '[' ']' `chainParser` parseIdentifier
+
+-- Parse a declaration of an INI variable
+parseDeclaration :: Parser Declaration
+parseDeclaration = do
+    identifier <- parseIdentifier
+    spaces
+    char '='
+    spaces
+    value <- parseValue
+    return $ Declaration (identifier, value)
+
+-- Consume and ignore a comment
+parseComment :: Parser ()
+parseComment = char '#' <* many (anyCharBut '\n')
+
+parseSection :: Parser Section
+parseSection = do
+    header <- parseHeader
+    char '\n'
+    newLinesAndComments
+    declarations <- parseDeclaration `sepBy` newLinesAndComments
+    return $ Section (header, declarations)
+    where
+        oneOrManyNewlines = Control.Monad.void (oneOrMany (char '\n'))
+        newLinesAndComments = Control.Monad.void $ zeroOrOne parseComment `sepBy` oneOrManyNewlines
+
+parseINI :: Parser INIFile
+parseINI = INIFile <$> many parseSection
 
 homeWork8Main :: IO ()
 homeWork8Main = do
@@ -192,3 +269,14 @@ homeWork8Main = do
         in print parseLines
     let parsedCsv = parse parseCSV "\"ab\",\"cd\"\n\"\",\"de\"\n\n"
         in print parsedCsv
+    let parsedArray = parse parseArray "[1,2,3,hello,4,5,9]"
+        in print parsedArray
+
+homeWork8INIMain :: IO ()
+homeWork8INIMain = do
+    input <- readFile "homework8.ini"
+    case parse parseINI input of
+        Just i -> print i
+        Nothing -> do
+            hPutStrLn stderr "Failed to parse INI file."
+            exitFailure
