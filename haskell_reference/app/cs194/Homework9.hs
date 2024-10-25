@@ -93,7 +93,7 @@ identifierBNF :: Descr f => f BNF
 identifierBNF = nonTerminal "identifier" $
     (\str -> [(str, Terminal "")]) -- todo: Terminal "" needs to have the actual RHS the identifier is assigned to
     <$> 
-    ((:) <$> letter <*> many (letter `orElse` digit `orElse` ('-' <$ char '-')))
+    ((:) <$> letter <*> many (letter `orElse` digit `orElse` literalChar '-'))
 
 
 -- EBNF in Haskell
@@ -314,14 +314,20 @@ many1 p = ((:) <$> p) <*> many p
 sepBy :: Descr f => f a -> f () -> f [a]
 sepBy p1 p2 = ((:) <$> p1 <*> many (p2 *> p1)) `orElse` pure []
 
-newline :: Descr f => f ()
-newline = primitive "newline" (charP '\n')
-
 nonTerminal :: Descr f => String -> f a -> f a
 nonTerminal name p = recNonTerminal name (const p)
 
 anyChar :: Descr f => f Char
 anyChar = primitive "char" anyCharP
+
+literalChar :: Descr f => Char -> f Char
+literalChar c = c <$ char c
+
+charChoice :: Descr f => [Char] -> f Char
+charChoice = foldl1 orElse . map literalChar
+
+newline :: Descr f => f ()
+newline = nonTerminal "newline" $ char '\n'
 
 letter :: Descr f => f Char
 letter = primitive "letter" $ do
@@ -329,9 +335,7 @@ letter = primitive "letter" $ do
     if isLetter c then return c else noParserP
 
 digit :: Descr f => f Char
-digit = primitive "digit" $ do
-    c <- anyCharP
-    if isDigit c then return c else noParserP
+digit = nonTerminal "digit" $ charChoice "0123456789"
 
 notQuoteOrBackslash :: Descr f => f Char
 notQuoteOrBackslash = primitive "non-quote-or-backslash" $ do
