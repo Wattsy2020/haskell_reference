@@ -1,3 +1,6 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use lambda-case" #-}
+{-# HLINT ignore "Use unless" #-}
 module Homework9 where
 
 import Data.Char
@@ -15,7 +18,7 @@ parseBNF = pure []
 
 -- Example: Simple expressions:
 
-data Expr = Plus Expr Expr | Mult Expr Expr | Const Integer
+data Expr = Plus Expr Expr | Mult Expr Expr | Factorial Expr | Const Integer
     deriving Show
 
 mkPlus :: Expr -> [Expr] -> Expr
@@ -25,24 +28,31 @@ mkMult :: Expr -> [Expr] -> Expr
 mkMult = foldl Mult
 
 parseExpr :: Descr f => f Expr
-parseExpr = recNonTerminal "expr" $ \ exp ->
-    ePlus exp
+parseExpr = recNonTerminal "expr" ePlus
 
 ePlus :: Descr f => f Expr -> f Expr
-ePlus exp = nonTerminal "plus" $
-    mkPlus <$> eMult exp
-           <*> many (spaces *>  char '+' *>  spaces *> eMult exp)
+ePlus expr = nonTerminal "plus" $
+    mkPlus <$> eMult expr
+           <*> many (spaces *>  char '+' *>  spaces *> eModifiedAtom expr)
            <*  spaces
 
 eMult :: Descr f => f Expr -> f Expr
-eMult exp = nonTerminal "mult" $
-    mkPlus <$> eAtom exp
-           <*> many (spaces *>  char '*' *>  spaces *> eAtom exp)
+eMult expr = nonTerminal "mult" $
+    mkPlus <$> eAtom expr
+           <*> many (spaces *>  char '*' *>  spaces *> eModifiedAtom expr)
            <*  spaces
 
+eModifiedAtom :: Descr f => f Expr -> f Expr
+eModifiedAtom expr = nonTerminal "modified atom" $
+    eFactorial expr `orElse` eAtom expr
+
+eFactorial :: Descr f => f Expr -> f Expr
+eFactorial expr = nonTerminal "factorial" $
+    Factorial <$> (eAtom expr <* char '!')
+
 eAtom :: Descr f => f Expr -> f Expr
-eAtom exp = nonTerminal "atom" $
-    aConst `orElse` eParens exp
+eAtom expr = nonTerminal "atom" $
+    aConst `orElse` eParens expr
 
 aConst :: Descr f => f Expr
 aConst = nonTerminal "const" $ Const . read <$> many1 digit
@@ -57,6 +67,33 @@ eParens inner =
        <*  spaces
 
 
+-- simpler example grammar / parser
+data SimpleExpr = ConstS Int | FactorialS SimpleExpr deriving Show
+
+simpleExpr :: Descr f => f SimpleExpr
+simpleExpr = recNonTerminal "expr" $ \expr ->
+    simpleFactorial expr `orElse` simpleConst
+
+simpleFactorial :: Descr f => f SimpleExpr -> f SimpleExpr
+simpleFactorial expr = nonTerminal "factorial" $
+    FactorialS <$> (char '!' *> expr)
+-- funnily enough I don't think it's possible to have '!' at the end here
+-- since recursion will try to check if the expr can parse first, it won't look for a '!' at the end yet
+
+simpleConst :: Descr f => f SimpleExpr
+simpleConst = nonTerminal "const" $
+    ConstS . read <$> many1 digit
+
+-- Start on BNF parser
+
+descriptorBNF :: Descr f => f BNF
+descriptorBNF = undefined
+
+identifierBNF :: Descr f => f BNF
+identifierBNF = nonTerminal "identifier" $
+    (\str -> [(str, Terminal "")]) -- todo: Terminal "" needs to have the actual RHS the identifier is assigned to
+    <$> 
+    ((:) <$> letter <*> many (letter `orElse` digit `orElse` ('-' <$ char '-')))
 
 
 -- EBNF in Haskell
@@ -77,7 +114,7 @@ mkSequences :: RHS -> [RHS] -> RHS
 mkSequences = foldl Sequence
 
 ppRHS :: RHS -> String
-ppRHS = go 0
+ppRHS = go (0 :: Integer)
   where
     go _ (Terminal s)     = surround "'" "'" $ concatMap quote s
     go _ (NonTerminal s)  = s
@@ -114,7 +151,7 @@ parse p input = case runParser p input of
     _ -> Nothing -- handles both no result and leftover input
 
 noParserP :: Parser a
-noParserP = P (\_ -> Nothing)
+noParserP = P (const Nothing)
 
 pureParserP :: a -> Parser a
 pureParserP x = P (\input -> Just (x,input))
@@ -170,10 +207,10 @@ manyP :: Parser a -> Parser [a]
 manyP p = ((:) <$> p <*> manyP p) `orElseP` return []
 
 many1P :: Parser a -> Parser [a]
-many1P p = pure (:) <*> p <*> manyP p
+many1P p = ((:) <$> p) <*> manyP p
 
 sepByP :: Parser a -> Parser () -> Parser [a]
-sepByP p1 p2 = ((:) <$> p1 <*> (manyP (p2 >> p1))) `orElseP` return []
+sepByP p1 p2 = ((:) <$> p1 <*> manyP (p2 >> p1)) `orElseP` return []
 
 -- A grammar-producing type constructor
 
@@ -187,7 +224,7 @@ ppGrammar :: String -> Grammar a -> String
 ppGrammar main g = ppBNF $ runGrammer main g
 
 charG :: Char -> Grammar ()
-charG c = G (([], Terminal [c]))
+charG c = G ([], Terminal [c])
 
 anyCharG :: Grammar Char
 anyCharG = G ([], NonTerminal "char")
@@ -206,16 +243,16 @@ instance Functor Grammar where
     fmap _ (G bnf) = G bnf
 
 instance Applicative Grammar where
-    pure x = G ([], Terminal "")
+    pure _ = G ([], Terminal "")
     G (prods1, Terminal "") <*> G (prods2, rhs2) = G (mergeProds prods1 prods2, rhs2)
     G (prods1, rhs1) <*> G (prods2, Terminal "") = G (mergeProds prods1 prods2, rhs1)
     G (prods1, rhs1) <*> G (prods2, rhs2) = G (mergeProds prods1 prods2, Sequence rhs1 rhs2)
 
 many1G :: Grammar a -> Grammar [a]
-many1G p = pure (:) <*> p <*> manyG p
+many1G p = ((:) <$> p) <*> manyG p
 
 sepByG :: Grammar a -> Grammar () -> Grammar [a]
-sepByG p1 p2 = ((:) <$> p1 <*> (manyG (p2 *> p1))) `orElseG` pure []
+sepByG p1 p2 = ((:) <$> p1 <*> manyG (p2 *> p1)) `orElseG` pure []
 
 primitiveG :: String -> Grammar a
 primitiveG s = G ([], NonTerminal s)
@@ -240,24 +277,42 @@ class Applicative f => Descr f where
     recNonTerminal :: String -> (f a -> f a) -> f a
 
 instance Descr Parser where
+    char :: Char -> Parser ()
     char = charP
+
+    many :: Parser a -> Parser [a]
     many = manyP
+
+    orElse :: Parser a -> Parser a -> Parser a
     orElse = orElseP
+
+    primitive :: String -> Parser a -> Parser a
     primitive _ p = p
+
+    recNonTerminal :: String -> (Parser a -> Parser a) -> Parser a
     recNonTerminal _ p = let r = p r in r
 
 instance Descr Grammar where
+    char :: Char -> Grammar ()
     char = charG
+
+    many :: Grammar a -> Grammar [a]
     many = manyG
+
+    orElse :: Grammar a -> Grammar a -> Grammar a
     orElse = orElseG
+
+    primitive :: String -> Parser a -> Grammar a
     primitive s _ = primitiveG s
+
+    recNonTerminal :: String -> (Grammar a -> Grammar a) -> Grammar a
     recNonTerminal = recNonTerminalG
 
 many1 :: Descr f => f a -> f [a]
-many1 p = pure (:) <*> p <*> many p
+many1 p = ((:) <$> p) <*> many p
 
 sepBy :: Descr f => f a -> f () -> f [a]
-sepBy p1 p2 = ((:) <$> p1 <*> (many (p2 *> p1))) `orElse` pure []
+sepBy p1 p2 = ((:) <$> p1 <*> many (p2 *> p1)) `orElse` pure []
 
 newline :: Descr f => f ()
 newline = primitive "newline" (charP '\n')
